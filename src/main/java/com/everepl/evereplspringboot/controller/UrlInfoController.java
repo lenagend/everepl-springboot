@@ -1,5 +1,6 @@
 package com.everepl.evereplspringboot.controller;
 
+import com.everepl.evereplspringboot.eceptions.InvalidUrlException;
 import com.everepl.evereplspringboot.service.UrlInfoService;
 import com.everepl.evereplspringboot.dto.UrlInfoRequest;
 import com.everepl.evereplspringboot.dto.UrlInfoResponse;
@@ -22,9 +23,14 @@ public class UrlInfoController {
     }
 
     @PostMapping
-    public ResponseEntity<UrlInfoResponse> processUrl(@RequestBody UrlInfoRequest urlInfoRequest) {
-        UrlInfoResponse urlInfoResponse = urlInfoService.processUrl(urlInfoRequest.url());
-        return ResponseEntity.ok(urlInfoResponse);
+    public ResponseEntity<?> processUrl(@RequestBody UrlInfoRequest urlInfoRequest) {
+        try {
+            UrlInfoResponse urlInfoResponse = urlInfoService.processUrl(urlInfoRequest.url());
+            return ResponseEntity.ok(urlInfoResponse);
+        } catch (InvalidUrlException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
+
 
 }
