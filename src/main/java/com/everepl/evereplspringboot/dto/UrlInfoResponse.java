@@ -7,10 +7,10 @@ public record UrlInfoResponse(
         String url,
         String title,
         String faviconSrc,
+        String description,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         Integer viewCount,
         Integer commentCount,
-        Integer reportCount,
-        String lastComment
+        Integer reportCount
 ) {}

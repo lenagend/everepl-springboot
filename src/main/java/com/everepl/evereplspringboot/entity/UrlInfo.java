@@ -14,15 +14,25 @@ public class UrlInfo {
     private String url;
     private String title;
     private String faviconSrc;
+    private String description;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    private Integer viewCount;
-    private Integer commentCount;
-    private Integer reportCount;
-    private String lastComment;
+    private Integer viewCount = 0;
+    private Integer commentCount = 0;
+    private Integer reportCount = 0;
 
     public UrlInfo() {
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -55,6 +65,14 @@ public class UrlInfo {
 
     public void setFaviconSrc(String faviconSrc) {
         this.faviconSrc = faviconSrc;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -97,11 +115,4 @@ public class UrlInfo {
         this.reportCount = reportCount;
     }
 
-    public String getLastComment() {
-        return lastComment;
-    }
-
-    public void setLastComment(String lastComment) {
-        this.lastComment = lastComment;
-    }
 }
