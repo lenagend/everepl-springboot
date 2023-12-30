@@ -94,10 +94,23 @@ public class UrlInfoService {
                     .timeout(5000)
                     .get();
             String title = doc.title();
-            String description = doc.select("meta[name=description]").attr("content");
 
+            // title이 비어 있거나 null일 경우 도메인 이름을 사용
+            if (title == null || title.trim().isEmpty()) {
+                URI uri = new URI(urlInfo.getUrl());
+                URL aURL = uri.toURL();
+                String domain = aURL.getHost();
+                // 도메인에서 'www.' 제거
+                domain = domain.replaceFirst("^www.*?\\.", "");
+                title = domain;
+            }
+
+            //파비콘
             Element faviconLink = doc.select("link[rel~=.*icon.*]").first();
-            String faviconUrl = faviconLink.attr("abs:href");
+            String faviconUrl = "";
+            if (faviconLink != null) {
+                faviconUrl = faviconLink.attr("abs:href");
+            }
 
             urlInfo.setTitle(title);
             urlInfo.setFaviconSrc(faviconUrl);
