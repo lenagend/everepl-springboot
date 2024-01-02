@@ -1,21 +1,24 @@
 package com.everepl.evereplspringboot.service;
 
 import com.everepl.evereplspringboot.dto.UrlInfoResponse;
-import com.everepl.evereplspringboot.eceptions.InvalidUrlException;
+import com.everepl.evereplspringboot.exceptions.InvalidUrlException;
 import com.everepl.evereplspringboot.entity.UrlInfo;
 import com.everepl.evereplspringboot.repository.UrlInfoRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.*;
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @Service
@@ -122,6 +125,11 @@ public class UrlInfoService {
             log.error("웹 페이지 정보를 추출하는 중 오류 발생: {}", urlInfo.getUrl(), e);
             throw new InvalidUrlException("웹 페이지 정보를 추출하는 중 오류 발생: " + urlInfo.getUrl());
         }
+    }
+
+    public UrlInfo getUrlInfoById(Long id) {
+        return urlInfoRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("UrlInfo not found with id: " + id));
     }
 
     public UrlInfoResponse convertToDto(UrlInfo urlInfo) {

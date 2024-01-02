@@ -1,4 +1,4 @@
-package com.everepl.evereplspringboot.eceptions;
+package com.everepl.evereplspringboot.exceptions;
 
 public class InvalidUrlException extends RuntimeException {
     public InvalidUrlException(String message) {
