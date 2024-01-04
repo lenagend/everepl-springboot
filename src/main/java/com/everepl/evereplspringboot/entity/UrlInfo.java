@@ -20,6 +20,7 @@ public class UrlInfo {
 
     private Integer viewCount = 0;
     private Integer commentCount = 0;
+    private Integer likeCount = 0;
     private Integer reportCount = 0;
 
     public UrlInfo() {
@@ -105,6 +106,14 @@ public class UrlInfo {
 
     public void setCommentCount(Integer commentCount) {
         this.commentCount = commentCount;
+    }
+
+    public Integer getLikeCount() {
+        return likeCount;
+    }
+
+    public void setLikeCount(Integer likeCount) {
+        this.likeCount = likeCount;
     }
 
     public Integer getReportCount() {

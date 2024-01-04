@@ -4,6 +4,7 @@ import com.everepl.evereplspringboot.dto.UrlInfoResponse;
 import com.everepl.evereplspringboot.exceptions.InvalidUrlException;
 import com.everepl.evereplspringboot.entity.UrlInfo;
 import com.everepl.evereplspringboot.repository.UrlInfoRepository;
+import com.everepl.evereplspringboot.specification.UrlInfoSpecification;
 import jakarta.persistence.EntityNotFoundException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -12,6 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -127,10 +131,21 @@ public class UrlInfoService {
         }
     }
 
-    public UrlInfo getUrlInfoById(Long id) {
-        return urlInfoRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("UrlInfo not found with id: " + id));
+    public UrlInfoResponse getUrlInfoById(Long id) {
+        Optional<UrlInfo> urlInfo = urlInfoRepository.findById(id);
+        if (urlInfo.isPresent()) {
+            return convertToDto(urlInfo.get());
+        } else {
+            throw new NoSuchElementException("Url정보를 찾을 수 없습니다: " + id);
+        }
     }
+
+    public Page<UrlInfoResponse> getUrlInfos(List<String> keywords, Pageable pageable) {
+        Specification<UrlInfo> spec = UrlInfoSpecification.hasKeywordInUrl(keywords);
+        Page<UrlInfo> urlInfos = urlInfoRepository.findAll(spec, pageable);
+        return urlInfos.map(this::convertToDto);
+    }
+
 
     public UrlInfoResponse convertToDto(UrlInfo urlInfo) {
         return new UrlInfoResponse(
@@ -143,6 +158,7 @@ public class UrlInfoService {
                 urlInfo.getUpdatedAt(),
                 urlInfo.getViewCount(),
                 urlInfo.getCommentCount(),
+                urlInfo.getLikeCount(),
                 urlInfo.getReportCount()
         );
     }

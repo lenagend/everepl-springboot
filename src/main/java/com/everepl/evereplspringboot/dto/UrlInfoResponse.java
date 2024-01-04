@@ -12,5 +12,6 @@ public record UrlInfoResponse(
         LocalDateTime updatedAt,
         Integer viewCount,
         Integer commentCount,
+        Integer likeCount,
         Integer reportCount
 ) {}
