@@ -29,11 +29,15 @@ public class DataInitializer implements CommandLineRunner {
             urlInfo.setFaviconSrc("https://ssl.pstatic.net/static.news/image/news/2014/favicon/favicon.ico");
             urlInfo.setDescription("");
 
-            // 날짜를 현재부터 최대 100일 전으로 무작위 설정
-            int daysAgo = random.nextInt(100);
-            LocalDateTime randomDateTime = LocalDateTime.now().minusDays(daysAgo);
-            urlInfo.setCreatedAt(randomDateTime);
-            urlInfo.setUpdatedAt(randomDateTime.plusHours(random.nextInt(24))); // 최대 24시간 후로 설정
+            // 날짜를 일 단위로 설정하기 위해 시간, 분, 초, 나노초를 0으로 설정
+            LocalDateTime dateTime = LocalDateTime.now()
+                    .minusDays(i / 10)
+                    .withHour(0)
+                    .withMinute(0)
+                    .withSecond(0)
+                    .withNano(0);
+            urlInfo.setCreatedAt(dateTime);
+            urlInfo.setUpdatedAt(dateTime);
 
 
             // viewCount, commentCount, likeCount를 무작위 값으로 설정
