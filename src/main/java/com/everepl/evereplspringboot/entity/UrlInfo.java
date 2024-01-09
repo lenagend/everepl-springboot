@@ -2,6 +2,7 @@ package com.everepl.evereplspringboot.entity;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -17,6 +18,8 @@ public class UrlInfo {
     private String description;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDate updatedDate;
+
 
     private Integer viewCount = 0;
     private Integer commentCount = 0;
@@ -28,13 +31,23 @@ public class UrlInfo {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDate today = now.toLocalDate(); // LocalDateTime에서 LocalDate 추출
+
+        createdAt = now;
+        updatedAt = now;
+        updatedDate = today; // LocalDate 필드 설정
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDate today = now.toLocalDate();
+
+        updatedAt = now;
+        updatedDate = today;
     }
+
 
     public Long getId() {
         return id;
@@ -90,6 +103,14 @@ public class UrlInfo {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public LocalDate getUpdatedDate() {
+        return updatedDate;
+    }
+
+    public void setUpdatedDate(LocalDate updatedDate) {
+        this.updatedDate = updatedDate;
     }
 
     public Integer getViewCount() {

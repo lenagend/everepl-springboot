@@ -1,5 +1,6 @@
 package com.everepl.evereplspringboot.dto;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public record UrlInfoResponse(
@@ -10,6 +11,7 @@ public record UrlInfoResponse(
         String description,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
+        LocalDate updateDate,
         Integer viewCount,
         Integer commentCount,
         Integer likeCount,

@@ -156,6 +156,7 @@ public class UrlInfoService {
                 urlInfo.getDescription(),
                 urlInfo.getCreatedAt(),
                 urlInfo.getUpdatedAt(),
+                urlInfo.getUpdatedDate(),
                 urlInfo.getViewCount(),
                 urlInfo.getCommentCount(),
                 urlInfo.getLikeCount(),
