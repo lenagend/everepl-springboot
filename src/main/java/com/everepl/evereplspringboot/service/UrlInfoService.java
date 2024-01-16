@@ -30,7 +30,7 @@ import java.util.Optional;
 public class UrlInfoService {
     private static final Logger log = LoggerFactory.getLogger(UrlInfoService.class);
     private final UrlInfoRepository urlInfoRepository;
-    @Autowired
+
     public UrlInfoService(UrlInfoRepository urlInfoRepository) {
         this.urlInfoRepository = urlInfoRepository;
     }
@@ -167,6 +167,19 @@ public class UrlInfoService {
         } catch (Exception e) {
             // 예외 처리 로직
             log.error("Error updating popularity score for UrlInfo: " + urlInfo.getId(), e);
+        }
+    }
+
+    @Async
+    public void updatePopularityScore(Long urlInfoId) {
+        try {
+            UrlInfo urlInfo = urlInfoRepository.findById(urlInfoId)
+                    .orElseThrow(() -> new NoSuchElementException("URL 정보가 존재하지 않습니다: " + urlInfoId));
+            double score = calculatePopularityScore(urlInfo);
+            urlInfo.setPopularityScore(score);
+            urlInfoRepository.save(urlInfo);
+        } catch (Exception e) {
+            log.error("Error updating popularity score for UrlInfo: " + urlInfoId, e);
         }
     }
 

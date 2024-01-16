@@ -1,8 +1,9 @@
 package com.everepl.evereplspringboot.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -10,19 +11,34 @@ public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long parentCommentId;
     private String userIp;
+
+    @NotNull(message = "닉네임이 입력되지 않았습니다...")
+    @Size(min = 2, max = 8, message = "닉네임은 2~8글자 사이여야 합니다.")
     private String nickname;
-    private Long urlId;
+
+    @NotNull(message = "내용이 입력되지 않았습니다...")
     private String text;
-    private String pin;
+
+    @NotNull(message = "비밀번호가 입력되지 않았습니다...")
+    @Size(min = 4, max = 20, message = "비밀번호는 4~20글자 사이여야 합니다.")
+    private String password;
+
+    private Long targetId;
+    @Enumerated(EnumType.STRING)
+    private targetType type; // URLINFO, COMMENT 등
+    public enum targetType {
+        URLINFO, COMMENT
+    }
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    private Integer viewCount = 0;
     private Integer commentCount = 0;
     private Integer likeCount = 0;
     private Integer reportCount = 0;
+
+    private Double popularityScore = 0.0;
 
     public Comment() {
     }
@@ -48,14 +64,6 @@ public class Comment {
         this.id = id;
     }
 
-    public Long getParentCommentId() {
-        return parentCommentId;
-    }
-
-    public void setParentCommentId(Long parentCommentId) {
-        this.parentCommentId = parentCommentId;
-    }
-
     public String getUserIp() {
         return userIp;
     }
@@ -72,14 +80,6 @@ public class Comment {
         this.nickname = nickname;
     }
 
-    public Long getUrlId() {
-        return urlId;
-    }
-
-    public void setUrlId(Long urlId) {
-        this.urlId = urlId;
-    }
-
     public String getText() {
         return text;
     }
@@ -88,12 +88,28 @@ public class Comment {
         this.text = text;
     }
 
-    public String getPin() {
-        return pin;
+    public String getPassword() {
+        return password;
     }
 
-    public void setPin(String pin) {
-        this.pin = pin;
+    public void setPassword(String pin) {
+        this.password = pin;
+    }
+
+    public Long getTargetId() {
+        return targetId;
+    }
+
+    public void setTargetId(Long targetId) {
+        this.targetId = targetId;
+    }
+
+    public targetType getType() {
+        return type;
+    }
+
+    public void setType(targetType type) {
+        this.type = type;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -110,14 +126,6 @@ public class Comment {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    public Integer getViewCount() {
-        return viewCount;
-    }
-
-    public void setViewCount(Integer viewCount) {
-        this.viewCount = viewCount;
     }
 
     public Integer getCommentCount() {
@@ -142,5 +150,31 @@ public class Comment {
 
     public void setReportCount(Integer reportCount) {
         this.reportCount = reportCount;
+    }
+
+    public Double getPopularityScore() {
+        return popularityScore;
+    }
+
+    public void setPopularityScore(Double popularityScore) {
+        this.popularityScore = popularityScore;
+    }
+
+    public void incrementLikeCount(){
+        this.likeCount += 1;
+    }
+
+    public void incrementCommentCount(){
+        this.commentCount += 1;
+    }
+
+    public void decrementCommentCount(){
+        if(this.commentCount > 0){
+            this.commentCount -= 1;
+        }
+    }
+
+    public void incrementReportCount(){
+        this.reportCount += 1;
     }
 }
