@@ -6,50 +6,39 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-public class UrlInfo {
+public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(unique = true)
-    private String url;
-    private String title;
-    private String faviconSrc;
-    private String description;
+    private Long parentCommentId;
+    private String userIp;
+    private String nickname;
+    private Long urlId;
+    private String text;
+    private String pin;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private LocalDate updatedDate;
-
 
     private Integer viewCount = 0;
     private Integer commentCount = 0;
     private Integer likeCount = 0;
     private Integer reportCount = 0;
 
-    private Double popularityScore = 0.0;
-
-    public UrlInfo() {
+    public Comment() {
     }
 
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
-        LocalDate today = now.toLocalDate(); // LocalDateTime에서 LocalDate 추출
-
         createdAt = now;
         updatedAt = now;
-        updatedDate = today; // LocalDate 필드 설정
     }
 
     @PreUpdate
     protected void onUpdate() {
         LocalDateTime now = LocalDateTime.now();
-        LocalDate today = now.toLocalDate();
-
         updatedAt = now;
-        updatedDate = today;
     }
-
 
     public Long getId() {
         return id;
@@ -59,36 +48,52 @@ public class UrlInfo {
         this.id = id;
     }
 
-    public String getUrl() {
-        return url;
+    public Long getParentCommentId() {
+        return parentCommentId;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setParentCommentId(Long parentCommentId) {
+        this.parentCommentId = parentCommentId;
     }
 
-    public String getTitle() {
-        return title;
+    public String getUserIp() {
+        return userIp;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void setUserIp(String userIp) {
+        this.userIp = userIp;
     }
 
-    public String getFaviconSrc() {
-        return faviconSrc;
+    public String getNickname() {
+        return nickname;
     }
 
-    public void setFaviconSrc(String faviconSrc) {
-        this.faviconSrc = faviconSrc;
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
     }
 
-    public String getDescription() {
-        return description;
+    public Long getUrlId() {
+        return urlId;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
+    public void setUrlId(Long urlId) {
+        this.urlId = urlId;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public String getPin() {
+        return pin;
+    }
+
+    public void setPin(String pin) {
+        this.pin = pin;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -105,14 +110,6 @@ public class UrlInfo {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
-    }
-
-    public LocalDate getUpdatedDate() {
-        return updatedDate;
-    }
-
-    public void setUpdatedDate(LocalDate updatedDate) {
-        this.updatedDate = updatedDate;
     }
 
     public Integer getViewCount() {
@@ -145,29 +142,5 @@ public class UrlInfo {
 
     public void setReportCount(Integer reportCount) {
         this.reportCount = reportCount;
-    }
-
-    public Double getPopularityScore() {
-        return popularityScore;
-    }
-
-    public void setPopularityScore(Double score) {
-        this.popularityScore = score;
-    }
-
-    public void incrementViewCount() {
-        this.viewCount += 1;
-    }
-
-    public void incrementLikeCount(){
-        this.likeCount += 1;
-    }
-
-    public void incrementCommentCount(){
-        this.commentCount += 1;
-    }
-
-    public void incrementReportCount(){
-        this.reportCount += 1;
     }
 }

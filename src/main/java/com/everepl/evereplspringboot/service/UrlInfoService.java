@@ -16,6 +16,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -97,19 +98,24 @@ public class UrlInfoService {
     public void fetchWebPageInfo(UrlInfo urlInfo) throws InvalidUrlException {
         try {
             // Jsoup을 사용하여 2초 타임아웃으로 웹 페이지 정보 가져오기
-            Document doc = Jsoup.connect(urlInfo.getUrl())
+            String url = urlInfo.getUrl();
+
+            Document doc = Jsoup.connect(url)
                     .timeout(5000)
                     .get();
             String title = doc.title();
 
-            // title이 비어 있거나 null일 경우 도메인 이름을 사용
-            if (title == null || title.trim().isEmpty()) {
-                URI uri = new URI(urlInfo.getUrl());
-                URL aURL = uri.toURL();
-                String domain = aURL.getHost();
-                // 도메인에서 'www.' 제거
-                domain = domain.replaceFirst("^www.*?\\.", "");
-                title = domain;
+            String simplifiedUrl = url.replaceAll("^(http://www\\.|https://www\\.|http://|https://)", "");
+
+            // 예외할 도메인 리스트 정의
+            List<String> exceptionDomains = Arrays.asList("www.instagram.com");
+
+            // URL에서 도메인 추출
+            String domain = new URI(url).getHost();
+
+            // title이 비어 있거나 null이거나 예외 도메인 리스트에 해당 도메인이 포함되어 있을 경우
+            if (title == null || title.trim().isEmpty() || exceptionDomains.contains(domain)) {
+                title = simplifiedUrl;
             }
 
             //파비콘
@@ -131,10 +137,15 @@ public class UrlInfoService {
         }
     }
 
+
     public UrlInfoResponse getUrlInfoById(Long id) {
         Optional<UrlInfo> urlInfo = urlInfoRepository.findById(id);
         if (urlInfo.isPresent()) {
-            return convertToDto(urlInfo.get());
+            UrlInfo foundUrlInfo = urlInfo.get();
+            foundUrlInfo.incrementViewCount(); // 조회수 증가 메서드
+            updatePopularityScore(foundUrlInfo);
+            urlInfoRepository.save(foundUrlInfo); // 변경 사항 저장
+            return convertToDto(foundUrlInfo);
         } else {
             throw new NoSuchElementException("Url정보를 찾을 수 없습니다: " + id);
         }
@@ -146,6 +157,32 @@ public class UrlInfoService {
         return urlInfos.map(this::convertToDto);
     }
 
+    // 인기도 점수 계산 및 저장 (UrlInfo 객체가 이미 조회된 상태)
+    @Async
+    public void updatePopularityScore(UrlInfo urlInfo) {
+        try {
+            double score = calculatePopularityScore(urlInfo);
+            urlInfo.setPopularityScore(score);
+            urlInfoRepository.save(urlInfo);
+        } catch (Exception e) {
+            // 예외 처리 로직
+            log.error("Error updating popularity score for UrlInfo: " + urlInfo.getId(), e);
+        }
+    }
+
+    private double calculatePopularityScore(UrlInfo urlInfo) {
+        // 가중치 설정
+        double viewWeight = 0.1;   // 조회수에 대한 낮은 가중치
+        double likeWeight = 0.6;   // 좋아요에 대한 높은 가중치
+        double commentWeight = 0.3; // 댓글에 대한 중간 가중치
+        double reportPenalty = 0.4; // 신고에 대한 감점
+
+        // 계산 로직
+        return (urlInfo.getViewCount() * viewWeight) +
+                (urlInfo.getLikeCount() * likeWeight) +
+                (urlInfo.getCommentCount() * commentWeight) -
+                (urlInfo.getReportCount() * reportPenalty);
+    }
 
     public UrlInfoResponse convertToDto(UrlInfo urlInfo) {
         return new UrlInfoResponse(
