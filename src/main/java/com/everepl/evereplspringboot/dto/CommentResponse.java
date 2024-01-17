@@ -14,6 +14,5 @@ public record CommentResponse(
         LocalDateTime updatedAt,
         Integer commentCount,
         Integer likeCount,
-        Integer reportCount,
-        Double popularityScore
+        Integer reportCount
 ) {}

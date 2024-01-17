@@ -21,7 +21,6 @@ public class Comment {
     private String text;
 
     @NotNull(message = "비밀번호가 입력되지 않았습니다...")
-    @Size(min = 4, max = 20, message = "비밀번호는 4~20글자 사이여야 합니다.")
     private String password;
 
     private Long targetId;
