@@ -5,14 +5,11 @@ import com.everepl.evereplspringboot.exceptions.InvalidUrlException;
 import com.everepl.evereplspringboot.entity.UrlInfo;
 import com.everepl.evereplspringboot.repository.UrlInfoRepository;
 import com.everepl.evereplspringboot.specification.UrlInfoSpecification;
-import jakarta.persistence.EntityNotFoundException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -45,7 +42,7 @@ public class UrlInfoService {
 
         if (existingUrlInfo.isPresent()) {
             // URL 정보가 이미 존재하면 반환
-            return convertToDto(existingUrlInfo.get());
+            return toDto(existingUrlInfo.get());
         } else {
             // URL 정보가 없으면 새로 수집, 저장 후 반환
             UrlInfo urlInfo = new UrlInfo();
@@ -56,7 +53,7 @@ public class UrlInfoService {
 
             urlInfoRepository.save(urlInfo);
 
-            return convertToDto(urlInfo);
+            return toDto(urlInfo);
         }
     }
 
@@ -145,7 +142,7 @@ public class UrlInfoService {
             foundUrlInfo.incrementViewCount(); // 조회수 증가 메서드
             updatePopularityScore(foundUrlInfo);
             urlInfoRepository.save(foundUrlInfo); // 변경 사항 저장
-            return convertToDto(foundUrlInfo);
+            return toDto(foundUrlInfo);
         } else {
             throw new NoSuchElementException("Url정보를 찾을 수 없습니다: " + id);
         }
@@ -154,7 +151,7 @@ public class UrlInfoService {
     public Page<UrlInfoResponse> getUrlInfos(List<String> keywords, Pageable pageable) {
         Specification<UrlInfo> spec = UrlInfoSpecification.hasKeywordInUrl(keywords);
         Page<UrlInfo> urlInfos = urlInfoRepository.findAll(spec, pageable);
-        return urlInfos.map(this::convertToDto);
+        return urlInfos.map(this::toDto);
     }
 
     // 인기도 점수 계산 및 저장 (UrlInfo 객체가 이미 조회된 상태)
@@ -197,7 +194,7 @@ public class UrlInfoService {
                 (urlInfo.getReportCount() * reportPenalty);
     }
 
-    public UrlInfoResponse convertToDto(UrlInfo urlInfo) {
+    public UrlInfoResponse toDto(UrlInfo urlInfo) {
         return new UrlInfoResponse(
                 urlInfo.getId(),
                 urlInfo.getUrl(),

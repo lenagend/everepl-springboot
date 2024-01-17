@@ -1,5 +1,7 @@
 package com.everepl.evereplspringboot.service;
 
+import com.everepl.evereplspringboot.dto.CommentRequest;
+import com.everepl.evereplspringboot.dto.CommentResponse;
 import com.everepl.evereplspringboot.entity.Comment;
 import com.everepl.evereplspringboot.repository.CommentRepository;
 import org.slf4j.Logger;
@@ -17,16 +19,41 @@ public class CommentService {
         this.urlInfoService = urlInfoService;
     }
 
-    public Comment addComment(Comment comment) {
+    public CommentResponse addComment(CommentRequest commentRequest) {
         // 댓글 저장 로직
-        Comment savedComment = commentRepository.save(comment);
+        CommentResponse savedComment = toDto(commentRepository.save(toEntity(commentRequest)));
 
         // UrlInfo의 댓글 수 업데이트 및 인기도 점수 업데이트
-        if (comment.getType() == Comment.targetType.URLINFO) {
-            urlInfoService.updatePopularityScore(comment.getTargetId());
+        if (commentRequest.type() == Comment.targetType.URLINFO) {
+            urlInfoService.updatePopularityScore(commentRequest.targetId());
         }
 
         return savedComment;
     }
 
+    public static CommentResponse toDto(Comment comment) {
+        return new CommentResponse(
+                comment.getId(),
+                comment.getNickname(),
+                comment.getText(),
+                comment.getTargetId(),
+                comment.getType(),
+                comment.getCreatedAt(),
+                comment.getUpdatedAt(),
+                comment.getCommentCount(),
+                comment.getLikeCount(),
+                comment.getReportCount(),
+                comment.getPopularityScore()
+        );
+    }
+
+    public static Comment toEntity(CommentRequest request) {
+        Comment comment = new Comment();
+        comment.setNickname(request.nickname());
+        comment.setText(request.text());
+        comment.setPassword(request.password()); // 여기서 비밀번호를 다루는 방법을 고려해야 함
+        comment.setTargetId(request.targetId());
+        comment.setType(request.type());
+        return comment;
+    }
 }
