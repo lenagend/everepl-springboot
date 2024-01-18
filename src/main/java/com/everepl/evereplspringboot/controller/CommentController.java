@@ -2,17 +2,19 @@ package com.everepl.evereplspringboot.controller;
 
 import com.everepl.evereplspringboot.dto.CommentRequest;
 import com.everepl.evereplspringboot.dto.CommentResponse;
+import com.everepl.evereplspringboot.dto.UrlInfoResponse;
 import com.everepl.evereplspringboot.entity.Comment;
 import com.everepl.evereplspringboot.service.CommentService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 
 @RestController
@@ -25,9 +27,10 @@ public class CommentController {
     }
 
     @PostMapping
-    public ResponseEntity<?> addComment(@Valid @RequestBody CommentRequest commentRequest) {
+    public ResponseEntity<?> addComment(HttpServletRequest request, @Valid @RequestBody CommentRequest commentRequest) {
         try {
-            CommentResponse savedComment = commentService.addComment(commentRequest);
+            String userIp = request.getRemoteAddr();
+            CommentResponse savedComment = commentService.addComment(commentRequest, userIp);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedComment);
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
@@ -35,6 +38,16 @@ public class CommentController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Database access error: " + e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<?> getComments(@ModelAttribute CommentRequest commentRequest, Pageable pageable) {
+        try {
+            Page<CommentResponse> comments = commentService.getComments(commentRequest, pageable);
+            return ResponseEntity.ok(comments);
+        } catch (DataAccessException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Database access error: " + e.getMessage());
         }
     }
 }

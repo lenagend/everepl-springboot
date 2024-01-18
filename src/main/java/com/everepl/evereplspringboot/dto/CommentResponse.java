@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 public record CommentResponse(
         Long id,
+        String userIp,
         String nickname,
         String text,
         Long targetId,

@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Comment {
@@ -24,11 +26,19 @@ public class Comment {
     private String password;
 
     private Long targetId;
+
     @Enumerated(EnumType.STRING)
-    private targetType type; // URLINFO, COMMENT 등
-    public enum targetType {
-        URLINFO, COMMENT
+    private targetType type;
+    public enum targetType { //추후 BOARD 등 추가.
+        URLINFO
     }
+
+    @OneToMany(mappedBy = "parentComment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> replies = new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id") // 부모 댓글의 ID를 참조하는 외래 키
+    private Comment parentComment;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -91,16 +101,16 @@ public class Comment {
         return password;
     }
 
-    public void setPassword(String pin) {
-        this.password = pin;
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public Long getTargetId() {
         return targetId;
     }
 
-    public void setTargetId(Long targetId) {
-        this.targetId = targetId;
+    public void setTargetId(Long parrentId) {
+        this.targetId = parrentId;
     }
 
     public targetType getType() {
