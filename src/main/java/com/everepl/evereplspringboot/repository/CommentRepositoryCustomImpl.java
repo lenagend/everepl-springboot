@@ -1,6 +1,7 @@
 package com.everepl.evereplspringboot.repository;
 
 import com.everepl.evereplspringboot.entity.Comment;
+import com.everepl.evereplspringboot.entity.QComment;
 import com.querydsl.jpa.impl.JPAQuery;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
