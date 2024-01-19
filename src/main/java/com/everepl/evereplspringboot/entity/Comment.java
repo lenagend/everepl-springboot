@@ -33,7 +33,7 @@ public class Comment {
         URLINFO
     }
 
-    @OneToMany(mappedBy = "parentComment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "parentComment")
     private List<Comment> replies = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -109,8 +109,8 @@ public class Comment {
         return targetId;
     }
 
-    public void setTargetId(Long parrentId) {
-        this.targetId = parrentId;
+    public void setTargetId(Long targetId) {
+        this.targetId = targetId;
     }
 
     public targetType getType() {
@@ -119,6 +119,22 @@ public class Comment {
 
     public void setType(targetType type) {
         this.type = type;
+    }
+
+    public List<Comment> getReplies() {
+        return replies;
+    }
+
+    public void setReplies(List<Comment> replies) {
+        this.replies = replies;
+    }
+
+    public Comment getParentComment() {
+        return parentComment;
+    }
+
+    public void setParentComment(Comment parentComment) {
+        this.parentComment = parentComment;
     }
 
     public LocalDateTime getCreatedAt() {

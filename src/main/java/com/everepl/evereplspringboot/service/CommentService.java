@@ -68,6 +68,7 @@ public class CommentService {
                 comment.getText(),
                 comment.getTargetId(),
                 comment.getType(),
+                comment.getReplies(),
                 comment.getCreatedAt(),
                 comment.getUpdatedAt(),
                 comment.getCommentCount(),

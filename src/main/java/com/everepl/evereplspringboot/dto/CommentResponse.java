@@ -3,6 +3,7 @@ package com.everepl.evereplspringboot.dto;
 import com.everepl.evereplspringboot.entity.Comment;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record CommentResponse(
         Long id,
@@ -11,6 +12,7 @@ public record CommentResponse(
         String text,
         Long targetId,
         Comment.targetType type,
+        List<Comment> replies,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         Integer commentCount,
