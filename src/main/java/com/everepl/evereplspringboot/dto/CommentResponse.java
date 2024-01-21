@@ -12,7 +12,7 @@ public record CommentResponse(
         String text,
         Long targetId,
         Comment.targetType type,
-        List<Comment> replies,
+        List<CommentResponse> replies, // 변경된 부분
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         Integer commentCount,

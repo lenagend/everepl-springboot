@@ -163,9 +163,10 @@ public class UrlInfo {
         this.likeCount += 1;
     }
 
-    public void incrementCommentCount(){
-        this.commentCount += 1;
+    public void updateCommentCount(int increment) {
+        this.commentCount += increment;
     }
+
 
     public void incrementReportCount(){
         this.reportCount += 1;

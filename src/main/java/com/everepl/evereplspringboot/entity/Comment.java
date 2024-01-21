@@ -20,6 +20,8 @@ public class Comment {
     private String nickname;
 
     @NotNull(message = "내용이 입력되지 않았습니다...")
+    @Size(max = 5000, message = "댓글은 최대 5000자까지 입력 가능합니다.")
+    @Column(length = 5000) // 데이터베이스 컬럼 길이도 설정
     private String text;
 
     @NotNull(message = "비밀번호가 입력되지 않았습니다...")
@@ -30,7 +32,7 @@ public class Comment {
     @Enumerated(EnumType.STRING)
     private targetType type;
     public enum targetType { //추후 BOARD 등 추가.
-        URLINFO
+        URLINFO, COMMENT
     }
 
     @OneToMany(mappedBy = "parentComment")

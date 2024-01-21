@@ -12,7 +12,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,11 +31,19 @@ public class CommentService {
     }
 
     public CommentResponse addComment(CommentRequest commentRequest, String userIp) {
-        // 댓글 저장 로직
-        CommentResponse savedComment = toDto(commentRepository.save(toEntity(commentRequest, userIp, passwordEncoder)));
+        Comment newComment = toEntity(commentRequest, userIp, passwordEncoder);
 
-        // UrlInfo의 댓글 수 업데이트 및 인기도 점수 업데이트
+        // 대댓글인 경우 부모 댓글 설정
+        if (commentRequest.type() == Comment.targetType.COMMENT) {
+            Comment parentComment = commentRepository.findById(commentRequest.targetId())
+                    .orElseThrow(() -> new NoSuchElementException("부모 댓글을 찾을 수 없습니다."));
+            newComment.setParentComment(parentComment);
+        }
+
+        CommentResponse savedComment = toDto(commentRepository.save(newComment));
+
         if (commentRequest.type() == Comment.targetType.URLINFO) {
+            urlInfoService.updateCommentCount(commentRequest.targetId(), 1);
             urlInfoService.updatePopularityScore(commentRequest.targetId());
         }
 
@@ -61,6 +71,13 @@ public class CommentService {
 
 
     public static CommentResponse toDto(Comment comment) {
+        List<CommentResponse> replies = new ArrayList<>();
+        if (!comment.getReplies().isEmpty()) {
+            replies = comment.getReplies().stream()
+                    .map(CommentService::toDto)
+                    .collect(Collectors.toList());
+        }
+
         return new CommentResponse(
                 comment.getId(),
                 comment.getUserIp(),
@@ -68,7 +85,7 @@ public class CommentService {
                 comment.getText(),
                 comment.getTargetId(),
                 comment.getType(),
-                comment.getReplies(),
+                replies,  // 대댓글 리스트
                 comment.getCreatedAt(),
                 comment.getUpdatedAt(),
                 comment.getCommentCount(),
@@ -76,6 +93,7 @@ public class CommentService {
                 comment.getReportCount()
         );
     }
+
 
     public static Comment toEntity(CommentRequest request, String userIp, PasswordEncoder passwordEncoder) {
         Comment comment = new Comment();

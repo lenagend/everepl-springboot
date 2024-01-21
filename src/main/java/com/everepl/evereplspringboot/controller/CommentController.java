@@ -46,8 +46,9 @@ public class CommentController {
         try {
             Page<CommentResponse> comments = commentService.getComments(commentRequest, pageable);
             return ResponseEntity.ok(comments);
-        } catch (DataAccessException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Database access error: " + e.getMessage());
+        }
+        catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("error: " + e.getMessage());
         }
     }
 }
