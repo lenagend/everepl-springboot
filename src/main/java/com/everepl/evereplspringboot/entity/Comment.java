@@ -42,6 +42,8 @@ public class Comment {
     @JoinColumn(name = "parent_id") // 부모 댓글의 ID를 참조하는 외래 키
     private Comment parentComment;
 
+    private String path;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -137,6 +139,14 @@ public class Comment {
 
     public void setParentComment(Comment parentComment) {
         this.parentComment = parentComment;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 
     public LocalDateTime getCreatedAt() {

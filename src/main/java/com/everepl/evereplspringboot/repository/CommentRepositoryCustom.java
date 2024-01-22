@@ -7,5 +7,4 @@ import java.util.List;
 
 public interface CommentRepositoryCustom {
     List<Comment> findCommentsWithRepliesByTargetTypeAndTargetId(Comment.targetType type, Long targetId, Pageable pageable);
-    long countTotalCommentsIncludingRepliesByTargetTypeAndTargetId(Comment.targetType type, Long targetId);
 }

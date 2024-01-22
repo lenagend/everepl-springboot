@@ -19,48 +19,23 @@ public class CommentRepositoryCustomImpl implements CommentRepositoryCustom {
 
     @Override
     public List<Comment> findCommentsWithRepliesByTargetTypeAndTargetId(Comment.targetType type, Long targetId, Pageable pageable) {
-        // QueryDSL을 사용하기 위한 QComment 인스턴스 생성
         QComment qComment = QComment.comment;
-        QComment qReplies = new QComment("replies");
 
-        // QueryDSL JPAQuery를 사용하여 쿼리 생성
         JPAQuery<Comment> query = new JPAQuery<>(entityManager);
 
-        // 쿼리를 생성하여 반환할 결과 리스트
         List<Comment> comments = query.select(qComment)
                 .from(qComment)
-                // 대댓글을 포함시키기 위해 left join 사용, 별칭을 'qReplies'로 변경
-                .leftJoin(qComment.replies, qReplies)
-                .fetchJoin()
-                // targetType과 targetId에 따라 필터링
-                .where(qComment.type.eq(type)
-                        .and(qComment.targetId.eq(targetId)))
-                // Pageable 객체를 사용하여 페이징 처리
+                .where(  qComment.path.startsWith(String.valueOf(targetId))
+                        .and(qComment.type.eq(type))) // 경로 기반 필터링
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                // 결과 리스트 가져오기
+                .orderBy(qComment.path.asc())
+                .orderBy(qComment.createdAt.asc())// 경로 기준으로 정렬
                 .fetch();
 
         return comments;
-
     }
 
-    @Override
-    public long countTotalCommentsIncludingRepliesByTargetTypeAndTargetId(Comment.targetType type, Long targetId) {
-        QComment qComment = QComment.comment;
-        QComment qReply = new QComment("replies");
 
-        // 쿼리에서 대댓글을 고려하여 전체 개수를 계산
-        JPAQuery<Long> query = new JPAQuery<>(entityManager);
-
-        long count = query.select(qComment.count().add(qReply.count()))
-                .from(qComment)
-                .leftJoin(qComment.replies, qReply)
-                .where(qComment.type.eq(type)
-                        .and(qComment.targetId.eq(targetId)))
-                .fetchOne();
-
-        return count;
-    }
 
 }

@@ -38,6 +38,13 @@ public class CommentService {
             Comment parentComment = commentRepository.findById(commentRequest.targetId())
                     .orElseThrow(() -> new NoSuchElementException("부모 댓글을 찾을 수 없습니다."));
             newComment.setParentComment(parentComment);
+
+            // 부모 댓글의 path를 가져와 새 댓글의 path를 생성
+            String parentPath = parentComment.getPath();
+            String newPath = parentPath + "/" + commentRequest.targetId();
+            newComment.setPath(newPath);
+        }else{
+            newComment.setPath(String.valueOf(commentRequest.targetId()));
         }
 
         CommentResponse savedComment = toDto(commentRepository.save(newComment));
@@ -60,14 +67,19 @@ public class CommentService {
                 .map(CommentService::toDto)
                 .collect(Collectors.toList());
 
+
+
         // 총 댓글 수를 가져옵니다. 이는 페이징을 위해 필요합니다.
         // 이 부분은 프로젝트의 구체적인 요구사항에 따라 다를 수 있으며, 필요에 따라 수정합니다.
-        long total = commentRepository.countTotalCommentsIncludingRepliesByTargetTypeAndTargetId(
-                commentRequest.type(), commentRequest.targetId());
+        long total = 5;
 
         // PageImpl를 사용하여 페이징된 결과를 반환합니다.
         return new PageImpl<>(commentResponses, pageable, total);
     }
+
+//    public Page<CommentResponse> getComments(CommentRequest commentRequest, Pageable pageable) {
+//        return commentRepository.findAllByTypeAndTargetId(commentRequest.type(), commentRequest.targetId(), pageable).map(CommentService::toDto);
+//    }
 
 
     public static CommentResponse toDto(Comment comment) {
