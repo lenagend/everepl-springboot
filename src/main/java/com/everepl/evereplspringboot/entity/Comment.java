@@ -35,9 +35,11 @@ public class Comment {
         URLINFO, COMMENT
     }
 
-    @OneToMany(mappedBy = "parentComment")
+    // Materialized Path를 활용할 때는 이 필드를 쿼리 로직에서 사용하지 않음
+    @OneToMany(mappedBy = "parentComment", fetch = FetchType.LAZY)
     private List<Comment> replies = new ArrayList<>();
 
+    // 부모 댓글의 참조. Materialized Path와 함께 사용될 수 있지만, 필수는 아님
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id") // 부모 댓글의 ID를 참조하는 외래 키
     private Comment parentComment;

@@ -33,29 +33,41 @@ public class CommentService {
     public CommentResponse addComment(CommentRequest commentRequest, String userIp) {
         Comment newComment = toEntity(commentRequest, userIp, passwordEncoder);
 
-        // 대댓글인 경우 부모 댓글 설정
+        // 먼저 댓글 저장하여 ID를 생성
+        newComment = commentRepository.save(newComment);
+
+        // 대댓글인 경우 부모 댓글 설정 및 path 계산
         if (commentRequest.type() == Comment.targetType.COMMENT) {
             Comment parentComment = commentRepository.findById(commentRequest.targetId())
                     .orElseThrow(() -> new NoSuchElementException("부모 댓글을 찾을 수 없습니다."));
             newComment.setParentComment(parentComment);
 
-            // 부모 댓글의 path를 가져와 새 댓글의 path를 생성
-            String parentPath = parentComment.getPath();
-            String newPath = parentPath + "/" + commentRequest.targetId();
+            // 부모 댓글의 path와 현재 댓글의 ID를 사용하여 새로운 path 생성
+            String newPath = parentComment.getPath() + "/" + newComment.getId();
             newComment.setPath(newPath);
-        }else{
-            newComment.setPath(String.valueOf(commentRequest.targetId()));
+        } else {
+            // 루트 댓글인 경우, path는 댓글의 ID
+            newComment.setPath(commentRequest.targetId() + "/" + newComment.getId());
         }
 
-        CommentResponse savedComment = toDto(commentRepository.save(newComment));
+        // path가 업데이트된 댓글을 다시 저장
+        newComment = commentRepository.save(newComment);
 
-        if (commentRequest.type() == Comment.targetType.URLINFO) {
-            urlInfoService.updateCommentCount(commentRequest.targetId(), 1);
-            urlInfoService.updatePopularityScore(commentRequest.targetId());
+        // 댓글 응답 생성 및 반환
+        CommentResponse savedComment = toDto(newComment);
+
+
+        //루트댓글의 타켓타입과 타겟ID로 해당 엔티티의 commentCount 업데이트
+        Comment rootComment = findRootComment(newComment);
+
+        if (rootComment.getType() == Comment.targetType.URLINFO) {
+            urlInfoService.updateCommentCount(rootComment.getTargetId(), 1);
+            urlInfoService.updatePopularityScore(rootComment.getTargetId());
         }
 
         return savedComment;
     }
+
 
     public Page<CommentResponse> getComments(CommentRequest commentRequest, Pageable pageable) {
         // 새로운 커스텀 메서드를 호출합니다.
@@ -67,29 +79,24 @@ public class CommentService {
                 .map(CommentService::toDto)
                 .collect(Collectors.toList());
 
-
-
-        // 총 댓글 수를 가져옵니다. 이는 페이징을 위해 필요합니다.
-        // 이 부분은 프로젝트의 구체적인 요구사항에 따라 다를 수 있으며, 필요에 따라 수정합니다.
-        long total = 5;
+        int commentCount = 0;
+        if (commentRequest.type() == Comment.targetType.URLINFO) {
+            commentCount = urlInfoService.getCommentCountForUrlInfo(commentRequest.targetId());
+        }
 
         // PageImpl를 사용하여 페이징된 결과를 반환합니다.
-        return new PageImpl<>(commentResponses, pageable, total);
+        return new PageImpl<>(commentResponses, pageable, commentCount);
     }
 
-//    public Page<CommentResponse> getComments(CommentRequest commentRequest, Pageable pageable) {
-//        return commentRepository.findAllByTypeAndTargetId(commentRequest.type(), commentRequest.targetId(), pageable).map(CommentService::toDto);
-//    }
+    private Comment findRootComment(Comment comment) {
+        while (comment.getParentComment() != null) {
+            comment = comment.getParentComment();
+        }
+        return comment;
+    }
 
 
     public static CommentResponse toDto(Comment comment) {
-        List<CommentResponse> replies = new ArrayList<>();
-        if (!comment.getReplies().isEmpty()) {
-            replies = comment.getReplies().stream()
-                    .map(CommentService::toDto)
-                    .collect(Collectors.toList());
-        }
-
         return new CommentResponse(
                 comment.getId(),
                 comment.getUserIp(),
@@ -97,7 +104,7 @@ public class CommentService {
                 comment.getText(),
                 comment.getTargetId(),
                 comment.getType(),
-                replies,  // 대댓글 리스트
+                comment.getPath(),
                 comment.getCreatedAt(),
                 comment.getUpdatedAt(),
                 comment.getCommentCount(),
@@ -107,7 +114,7 @@ public class CommentService {
     }
 
 
-    public static Comment toEntity(CommentRequest request, String userIp, PasswordEncoder passwordEncoder) {
+        public static Comment toEntity(CommentRequest request, String userIp, PasswordEncoder passwordEncoder) {
         Comment comment = new Comment();
         comment.setUserIp(userIp);
         comment.setNickname(request.nickname());
