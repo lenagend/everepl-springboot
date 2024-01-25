@@ -8,6 +8,10 @@ import com.everepl.evereplspringboot.specification.UrlInfoSpecification;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -16,8 +20,11 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.*;
+import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -91,47 +98,102 @@ public class UrlInfoService {
         }
     }
 
+    private void setupTrustAllCerts() throws Exception {
+        TrustManager[] trustAllCerts = new TrustManager[]{
+                new X509TrustManager() {
+                    public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                        return new X509Certificate[0];
+                    }
+                    public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) { }
+                    public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) { }
+                }
+        };
+
+        SSLContext sc = SSLContext.getInstance("SSL");
+        sc.init(null, trustAllCerts, new java.security.SecureRandom());
+        HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+
+        HostnameVerifier allHostsValid = new HostnameVerifier() {
+            public boolean verify(String hostname, SSLSession session) {
+                return true;
+            }
+        };
+
+        HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+    }
+
 
     public void fetchWebPageInfo(UrlInfo urlInfo) throws InvalidUrlException {
+        WebDriver driver = null;
         try {
-            // Jsoup을 사용하여 2초 타임아웃으로 웹 페이지 정보 가져오기
+            setupTrustAllCerts();
+
             String url = urlInfo.getUrl();
 
-            Document doc = Jsoup.connect(url)
-                    .timeout(5000)
-                    .get();
-            String title = doc.title();
-
-            String simplifiedUrl = url.replaceAll("^(http://www\\.|https://www\\.|http://|https://)", "");
-
-            // 예외할 도메인 리스트 정의
-            List<String> exceptionDomains = Arrays.asList("www.instagram.com");
+            // 셀레니움으로 처리할 도메인 리스트 정의
+            List<String> seleniumDomains = Arrays.asList("instagram.com", "twitter.com");
 
             // URL에서 도메인 추출
-            String domain = new URI(url).getHost();
+            String domain = extractDomain(url);
 
-            // title이 비어 있거나 null이거나 예외 도메인 리스트에 해당 도메인이 포함되어 있을 경우
-            if (title == null || title.trim().isEmpty() || exceptionDomains.contains(domain)) {
-                title = simplifiedUrl;
+            // 셀레니움을 사용해야 하는 경우
+            if (seleniumDomains.contains(domain)) {
+                // 셀레니움 WebDriver 설정
+                driver = new ChromeDriver();
+                driver.get(url);
+                driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5)); // 5초 대기
+
+                // 제목 추출
+                String title = driver.getTitle();
+                urlInfo.setTitle(title);
+
+                // 파비콘 추출
+                WebElement faviconLink = driver.findElement(By.cssSelector("link[rel~='icon']"));
+                String faviconUrl = "";
+                if (faviconLink != null) {
+                    faviconUrl = faviconLink.getAttribute("href");
+                }
+                urlInfo.setFaviconSrc(faviconUrl);
+            } else {
+                // 기존 Jsoup 처리
+                Document doc = Jsoup.connect(url)
+                        .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36")
+                        .timeout(5000)
+                        .get();
+                String title = doc.title();
+
+                Element faviconLink = doc.select("link[rel~=.*icon.*]").first();
+                String faviconUrl = "";
+                if (faviconLink != null) {
+                    faviconUrl = faviconLink.attr("abs:href");
+                }
+                urlInfo.setTitle(title);
+                urlInfo.setFaviconSrc(faviconUrl);
             }
-
-            //파비콘
-            Element faviconLink = doc.select("link[rel~=.*icon.*]").first();
-            String faviconUrl = "";
-            if (faviconLink != null) {
-                faviconUrl = faviconLink.attr("abs:href");
-            }
-
-            urlInfo.setTitle(title);
-            urlInfo.setFaviconSrc(faviconUrl);
-
         } catch (SocketTimeoutException e) {
             log.error("웹 페이지 정보를 가져오는 데 시간이 초과되었습니다: {}", urlInfo.getUrl(), e);
             throw new InvalidUrlException("웹 페이지 정보를 가져오는 데 시간이 초과되었습니다: " + urlInfo.getUrl());
         } catch (Exception e) {
             log.error("웹 페이지 정보를 추출하는 중 오류 발생: {}", urlInfo.getUrl(), e);
             throw new InvalidUrlException("웹 페이지 정보를 추출하는 중 오류 발생: " + urlInfo.getUrl());
+        } finally {
+            if (driver != null) {
+                driver.quit(); // 셀레니움 드라이버 종료
+            }
         }
+    }
+
+    private String extractDomain(String url) throws URISyntaxException {
+        URI uri = new URI(url);
+        String domain = uri.getHost();
+        if (domain == null) return null;
+
+        // 'www' 및 서브도메인 제거
+        int index = domain.indexOf('.');
+        if (index != -1 && index < domain.lastIndexOf('.')) {
+            domain = domain.substring(index + 1);
+        }
+        return domain;
     }
 
 
