@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -95,6 +96,31 @@ public class CommentService {
         return comment;
     }
 
+    public CommentResponse updateOrDeleteComment(CommentRequest commentRequest) {
+        Long commentId = commentRequest.targetId();
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new NoSuchElementException("해당 댓글을 찾을 수 없습니다."));
+
+        // 비밀번호 확인
+        if (!passwordEncoder.matches(commentRequest.password(), comment.getPassword())) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+
+        // 댓글 내용 및 삭제 여부 업데이트
+        if (commentRequest.text() != null) {
+            comment.setText(commentRequest.text());
+        }
+        if (commentRequest.isDeleted() != null) {
+            comment.setDeleted(commentRequest.isDeleted());
+        }
+
+        comment.setUpdatedAt(LocalDateTime.now());
+
+        Comment updatedComment = commentRepository.save(comment);
+
+        return toDto(updatedComment);
+    }
+
 
     public static CommentResponse toDto(Comment comment) {
         return new CommentResponse(
@@ -107,6 +133,7 @@ public class CommentService {
                 comment.getPath(),
                 comment.getCreatedAt(),
                 comment.getUpdatedAt(),
+                comment.isDeleted(),
                 comment.getCommentCount(),
                 comment.getLikeCount(),
                 comment.getReportCount()
@@ -114,7 +141,7 @@ public class CommentService {
     }
 
 
-        public static Comment toEntity(CommentRequest request, String userIp, PasswordEncoder passwordEncoder) {
+    public static Comment toEntity(CommentRequest request, String userIp, PasswordEncoder passwordEncoder) {
         Comment comment = new Comment();
         comment.setUserIp(userIp);
         comment.setNickname(request.nickname());
@@ -126,7 +153,13 @@ public class CommentService {
 
         comment.setTargetId(request.targetId());
         comment.setType(request.type());
+
+        // isDeleted가 null인 경우 false로 설정
+        Boolean isDeleted = request.isDeleted() != null ? request.isDeleted() : false;
+        comment.setDeleted(isDeleted);
+
         return comment;
     }
+
 
 }

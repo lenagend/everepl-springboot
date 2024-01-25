@@ -49,6 +49,8 @@ public class Comment {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    private boolean isDeleted = false;
+
     private Integer commentCount = 0;
     private Integer likeCount = 0;
     private Integer reportCount = 0;
@@ -165,6 +167,14 @@ public class Comment {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public boolean isDeleted() {
+        return isDeleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        isDeleted = deleted;
     }
 
     public Integer getCommentCount() {

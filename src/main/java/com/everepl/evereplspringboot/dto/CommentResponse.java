@@ -15,6 +15,7 @@ public record CommentResponse(
         String path,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
+        Boolean isDeleted,
         Integer commentCount,
         Integer likeCount,
         Integer reportCount

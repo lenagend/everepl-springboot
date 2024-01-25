@@ -27,7 +27,7 @@ public class CommentController {
     }
 
     @PostMapping
-    public ResponseEntity<?> addComment(HttpServletRequest request, @Valid @RequestBody CommentRequest commentRequest) {
+    public ResponseEntity<?> addComment(HttpServletRequest request, @RequestBody CommentRequest commentRequest) {
         try {
             String userIp = request.getRemoteAddr();
             CommentResponse savedComment = commentService.addComment(commentRequest, userIp);
@@ -51,4 +51,23 @@ public class CommentController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("error: " + e.getMessage());
         }
     }
+
+    @PostMapping("/updateOrDeleteComment")
+    public ResponseEntity<?> updateOrDeleteComment(
+            @RequestBody CommentRequest commentRequest) {
+
+        try {
+            CommentResponse updatedComment = commentService.updateOrDeleteComment(commentRequest);
+            return ResponseEntity.ok(updatedComment);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("댓글을 찾을 수 없습니다: " + e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("잘못된 요청: " + e.getMessage());
+        } catch (DataAccessException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("데이터베이스 접근 오류: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("요청 처리 오류: " + e.getMessage());
+        }
+    }
+
 }

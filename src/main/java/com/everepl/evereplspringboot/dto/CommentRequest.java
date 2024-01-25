@@ -7,5 +7,6 @@ public record CommentRequest(
     String text,
     String password,
     Long targetId,
-    Comment.targetType type
+    Comment.targetType type,
+    Boolean isDeleted
 ){}
