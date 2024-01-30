@@ -2,11 +2,8 @@ package com.everepl.evereplspringboot.controller;
 
 import com.everepl.evereplspringboot.dto.CommentRequest;
 import com.everepl.evereplspringboot.dto.CommentResponse;
-import com.everepl.evereplspringboot.dto.UrlInfoResponse;
-import com.everepl.evereplspringboot.entity.Comment;
 import com.everepl.evereplspringboot.service.CommentService;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,7 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.NoSuchElementException;
 
 @RestController
@@ -52,12 +48,12 @@ public class CommentController {
         }
     }
 
-    @PostMapping("/updateOrDeleteComment")
+    @PatchMapping
     public ResponseEntity<?> updateOrDeleteComment(
             @RequestBody CommentRequest commentRequest) {
 
         try {
-            CommentResponse updatedComment = commentService.updateOrDeleteComment(commentRequest);
+            CommentResponse updatedComment = commentService.updateComment(commentRequest);
             return ResponseEntity.ok(updatedComment);
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("댓글을 찾을 수 없습니다: " + e.getMessage());

@@ -96,30 +96,25 @@ public class CommentService {
         return comment;
     }
 
-    public CommentResponse updateOrDeleteComment(CommentRequest commentRequest) {
+    public CommentResponse updateComment(CommentRequest commentRequest) {
         Long commentId = commentRequest.targetId();
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new NoSuchElementException("해당 댓글을 찾을 수 없습니다."));
 
-        // 비밀번호 확인
-        if (!passwordEncoder.matches(commentRequest.password(), comment.getPassword())) {
+        // 비밀번호가 제공되었는지 확인하고, 제공된 경우 일치하는지 확인
+        if (commentRequest.password() != null && !passwordEncoder.matches(commentRequest.password(), comment.getPassword())) {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
-        // 댓글 내용 및 삭제 여부 업데이트
-        if (commentRequest.text() != null) {
-            comment.setText(commentRequest.text());
-        }
-        if (commentRequest.isDeleted() != null) {
-            comment.setDeleted(commentRequest.isDeleted());
-        }
+        // Comment 객체 업데이트
+        updateEntity(comment, commentRequest, passwordEncoder);
 
         comment.setUpdatedAt(LocalDateTime.now());
-
         Comment updatedComment = commentRepository.save(comment);
 
         return toDto(updatedComment);
     }
+
 
 
     public static CommentResponse toDto(Comment comment) {
@@ -154,11 +149,33 @@ public class CommentService {
         comment.setTargetId(request.targetId());
         comment.setType(request.type());
 
-        // isDeleted가 null인 경우 false로 설정
+        return comment;
+    }
+
+    public static void updateEntity(Comment comment, CommentRequest request, PasswordEncoder passwordEncoder) {
+        if (request.nickname() != null) {
+            comment.setNickname(request.nickname());
+        }
+
+        if (request.text() != null) {
+            comment.setText(request.text());
+        }
+
+        if (request.password() != null) {
+            String encryptedPassword = passwordEncoder.encode(request.password());
+            comment.setPassword(encryptedPassword);
+        }
+
+        if (request.targetId() != null) {
+            comment.setTargetId(request.targetId());
+        }
+
+        if (request.type() != null) {
+            comment.setType(request.type());
+        }
+
         Boolean isDeleted = request.isDeleted() != null ? request.isDeleted() : false;
         comment.setDeleted(isDeleted);
-
-        return comment;
     }
 
 
