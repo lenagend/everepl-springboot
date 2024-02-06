@@ -118,11 +118,14 @@ public class CommentService {
 
 
     public static CommentResponse toDto(Comment comment) {
+        // 삭제된 댓글인 경우 대체 텍스트 설정
+        String text = comment.isDeleted() ? "삭제된 댓글입니다" : comment.getText();
+
         return new CommentResponse(
                 comment.getId(),
                 comment.getUserIp(),
                 comment.getNickname(),
-                comment.getText(),
+                text, // 수정된 텍스트 사용
                 comment.getTargetId(),
                 comment.getType(),
                 comment.getPath(),
@@ -134,6 +137,7 @@ public class CommentService {
                 comment.getReportCount()
         );
     }
+
 
 
     public static Comment toEntity(CommentRequest request, String userIp, PasswordEncoder passwordEncoder) {
