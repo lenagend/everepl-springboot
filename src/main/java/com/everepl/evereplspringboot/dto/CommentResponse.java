@@ -12,10 +12,10 @@ public record CommentResponse(
         String text,
         Long targetId,
         Comment.targetType type,
-        String path,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         Boolean isDeleted,
+        Integer replyCount,
         Integer commentCount,
         Integer likeCount,
         Integer reportCount
