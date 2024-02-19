@@ -46,6 +46,10 @@ public class CommentService {
             // 부모 댓글의 path와 현재 댓글의 ID를 사용하여 새로운 path 생성
             String newPath = parentComment.getPath() + "/" + newComment.getId();
             newComment.setPath(newPath);
+
+            // 부모 댓글의 commentCount를 업데이트
+            parentComment.updateCommentCount(1);
+            commentRepository.save(parentComment); // 변경된 부모 댓글을 저장
         } else {
             // 루트 댓글인 경우, path는 댓글의 ID
             newComment.setPath(commentRequest.targetId() + "/" + newComment.getId());
@@ -121,6 +125,14 @@ public class CommentService {
         // 삭제된 댓글인 경우 대체 텍스트 설정
         String text = comment.isDeleted() ? "삭제된 댓글입니다" : comment.getText();
 
+        // 부모 댓글의 닉네임 설정, 부모 댓글이 없는 경우 null
+        String parentCommentNickname = null;
+        String parentCommentUserIp = null;
+        if (comment.getParentComment() != null) {
+            parentCommentNickname = comment.getParentComment().getNickname();
+            parentCommentUserIp = comment.getParentComment().getUserIp();
+        }
+
         return new CommentResponse(
                 comment.getId(),
                 comment.getUserIp(),
@@ -128,6 +140,8 @@ public class CommentService {
                 text, // 수정된 텍스트 사용
                 comment.getTargetId(),
                 comment.getType(),
+                parentCommentNickname, // 부모 댓글의 닉네임 추가
+                parentCommentUserIp,
                 comment.getPath(),
                 comment.getCreatedAt(),
                 comment.getUpdatedAt(),
@@ -137,6 +151,7 @@ public class CommentService {
                 comment.getReportCount()
         );
     }
+
 
 
 
