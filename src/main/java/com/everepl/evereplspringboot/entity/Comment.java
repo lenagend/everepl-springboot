@@ -227,14 +227,8 @@ public class Comment {
         this.likeCount += 1;
     }
 
-    public void incrementCommentCount(){
-        this.commentCount += 1;
-    }
-
-    public void decrementCommentCount(){
-        if(this.commentCount > 0){
-            this.commentCount -= 1;
-        }
+    public void updateCommentCount(int increment) {
+        this.commentCount += increment;
     }
 
     public void incrementReportCount(){

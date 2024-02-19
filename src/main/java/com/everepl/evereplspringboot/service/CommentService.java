@@ -34,28 +34,70 @@ public class CommentService {
     public CommentResponse addComment(CommentRequest commentRequest, String userIp) {
         Comment newComment = toEntity(commentRequest, userIp, passwordEncoder);
 
-        // 대댓글인 경우 부모 댓글 설정
+        // 먼저 댓글 저장하여 ID를 생성
+        newComment = commentRepository.save(newComment);
+
+        // 대댓글인 경우 부모 댓글 설정 및 path 계산
         if (commentRequest.type() == Comment.targetType.COMMENT) {
             Comment parentComment = commentRepository.findById(commentRequest.targetId())
                     .orElseThrow(() -> new NoSuchElementException("부모 댓글을 찾을 수 없습니다."));
             newComment.setParentComment(parentComment);
+
+            // 부모 댓글의 path와 현재 댓글의 ID를 사용하여 새로운 path 생성
+            String newPath = parentComment.getPath() + "/" + newComment.getId();
+            newComment.setPath(newPath);
+
+            // 부모 댓글의 commentCount를 업데이트
+            parentComment.updateCommentCount(1);
+            commentRepository.save(parentComment); // 변경된 부모 댓글을 저장
+        } else {
+            // 루트 댓글인 경우, path는 댓글의 ID
+            newComment.setPath(commentRequest.targetId() + "/" + newComment.getId());
         }
 
-        // 댓글 저장하여 ID를 생성 및 부모 댓글 설정 반영
+        // path가 업데이트된 댓글을 다시 저장
         newComment = commentRepository.save(newComment);
 
         // 댓글 응답 생성 및 반환
-        return toDto(newComment);
+        CommentResponse savedComment = toDto(newComment);
+
+
+        //루트댓글의 타켓타입과 타겟ID로 해당 엔티티의 commentCount 업데이트
+        Comment rootComment = findRootComment(newComment);
+
+        if (rootComment.getType() == Comment.targetType.URLINFO) {
+            urlInfoService.updateCommentCount(rootComment.getTargetId(), 1);
+            urlInfoService.updatePopularityScore(rootComment.getTargetId());
+        }
+
+        return savedComment;
     }
 
 
-
-
     public Page<CommentResponse> getComments(CommentRequest commentRequest, Pageable pageable) {
-        Page<CommentResponse> comments = commentRepository.findAllByTypeAndTargetId(
-                commentRequest.type(), commentRequest.targetId(), pageable).map(CommentService::toDto);
+        // 새로운 커스텀 메서드를 호출합니다.
+        List<Comment> comments = commentRepository.findCommentsWithRepliesByTargetTypeAndTargetId(
+                commentRequest.type(), commentRequest.targetId(), pageable);
 
-        return comments;
+        // 결과를 CommentResponse DTO로 변환합니다.
+        List<CommentResponse> commentResponses = comments.stream()
+                .map(CommentService::toDto)
+                .collect(Collectors.toList());
+
+        int commentCount = 0;
+        if (commentRequest.type() == Comment.targetType.URLINFO) {
+            commentCount = urlInfoService.getCommentCountForUrlInfo(commentRequest.targetId());
+        }
+
+        // PageImpl를 사용하여 페이징된 결과를 반환합니다.
+        return new PageImpl<>(commentResponses, pageable, commentCount);
+    }
+
+    private Comment findRootComment(Comment comment) {
+        while (comment.getParentComment() != null) {
+            comment = comment.getParentComment();
+        }
+        return comment;
     }
 
     public CommentResponse updateComment(CommentRequest commentRequest) {
@@ -83,6 +125,14 @@ public class CommentService {
         // 삭제된 댓글인 경우 대체 텍스트 설정
         String text = comment.isDeleted() ? "삭제된 댓글입니다" : comment.getText();
 
+        // 부모 댓글의 닉네임 설정, 부모 댓글이 없는 경우 null
+        String parentCommentNickname = null;
+        String parentCommentUserIp = null;
+        if (comment.getParentComment() != null) {
+            parentCommentNickname = comment.getParentComment().getNickname();
+            parentCommentUserIp = comment.getParentComment().getUserIp();
+        }
+
         return new CommentResponse(
                 comment.getId(),
                 comment.getUserIp(),
@@ -90,15 +140,18 @@ public class CommentService {
                 text, // 수정된 텍스트 사용
                 comment.getTargetId(),
                 comment.getType(),
+                parentCommentNickname, // 부모 댓글의 닉네임 추가
+                parentCommentUserIp,
+                comment.getPath(),
                 comment.getCreatedAt(),
                 comment.getUpdatedAt(),
                 comment.isDeleted(),
-                comment.getReplyCount(),
                 comment.getCommentCount(),
                 comment.getLikeCount(),
                 comment.getReportCount()
         );
     }
+
 
 
 
