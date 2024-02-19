@@ -3,7 +3,6 @@ package com.everepl.evereplspringboot.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import org.hibernate.annotations.Formula;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -40,17 +39,12 @@ public class Comment {
     @OneToMany(mappedBy = "parentComment", fetch = FetchType.LAZY)
     private List<Comment> replies = new ArrayList<>();
 
-    @Formula("(SELECT COUNT(*) FROM comment r WHERE r.parent_id = id)")
-    private int replyCount;
-
     // 부모 댓글의 참조. Materialized Path와 함께 사용될 수 있지만, 필수는 아님
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id") // 부모 댓글의 ID를 참조하는 외래 키
     private Comment parentComment;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "target_comment_id") // 대상 댓글의 ID를 참조하는 외래 키
-    private Comment targetComment;
+    private String path;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -143,14 +137,6 @@ public class Comment {
         this.replies = replies;
     }
 
-    public int getReplyCount() {
-        return replyCount;
-    }
-
-    public void setReplyCount(int replyCount) {
-        this.replyCount = replyCount;
-    }
-
     public Comment getParentComment() {
         return parentComment;
     }
@@ -159,12 +145,12 @@ public class Comment {
         this.parentComment = parentComment;
     }
 
-    public Comment getTargetComment() {
-        return targetComment;
+    public String getPath() {
+        return path;
     }
 
-    public void setTargetComment(Comment targetComment) {
-        this.targetComment = targetComment;
+    public void setPath(String path) {
+        this.path = path;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -216,6 +216,13 @@ public class UrlInfoService {
         return urlInfos.map(this::toDto);
     }
 
+    //댓글수 조회
+    public int getCommentCountForUrlInfo(Long urlInfoId) {
+        UrlInfo urlInfo = urlInfoRepository.findById(urlInfoId)
+                .orElseThrow(() -> new NoSuchElementException("URL 정보가 존재하지 않습니다: " + urlInfoId));
+        return urlInfo.getCommentCount();
+    }
+
     //댓글수 증감
     public void updateCommentCount(Long urlInfoId, int increment) {
         UrlInfo urlInfo = urlInfoRepository.findById(urlInfoId)
@@ -224,13 +231,14 @@ public class UrlInfoService {
         urlInfoRepository.save(urlInfo);
     }
 
-    //댓글수 조회
-    public int getCommentCountForUrlInfo(Long urlInfoId) {
+
+    // 증감
+    public void updateLikeCount(Long urlInfoId, int increment) {
         UrlInfo urlInfo = urlInfoRepository.findById(urlInfoId)
                 .orElseThrow(() -> new NoSuchElementException("URL 정보가 존재하지 않습니다: " + urlInfoId));
-        return urlInfo.getCommentCount();
+        urlInfo.updateLikeCount(increment); // 메서드명과 로직 변경
+        urlInfoRepository.save(urlInfo);
     }
-
 
     // 인기도 점수 계산 및 저장 (UrlInfo 객체가 이미 조회된 상태)
     @Async
