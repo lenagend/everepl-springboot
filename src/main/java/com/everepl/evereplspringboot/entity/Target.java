@@ -19,6 +19,11 @@ public class Target {
     public Target() {
     }
 
+    public Target(Long targetId, TargetType type) {
+        this.targetId = targetId;
+        this.type = type;
+    }
+
     public Long getTargetId() {
         return targetId;
     }

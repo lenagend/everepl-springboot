@@ -237,7 +237,7 @@ public class UrlInfoService {
         UrlInfo urlInfo = urlInfoRepository.findById(urlInfoId)
                 .orElseThrow(() -> new NoSuchElementException("URL 정보가 존재하지 않습니다: " + urlInfoId));
         urlInfo.updateLikeCount(increment); // 메서드명과 로직 변경
-        urlInfoRepository.save(urlInfo);
+        updatePopularityScore(urlInfo);
     }
 
     // 인기도 점수 계산 및 저장 (UrlInfo 객체가 이미 조회된 상태)
