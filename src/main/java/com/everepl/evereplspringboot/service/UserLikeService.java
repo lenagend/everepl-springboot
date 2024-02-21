@@ -31,7 +31,7 @@ public class UserLikeService {
 
         if (alreadyLiked) {
             // 이미 좋아요를 추가했다면, 추가적인 처리 없이 종료
-            throw new IllegalArgumentException("이미 좋아요를 추가했습니다.");
+            throw new IllegalArgumentException("이미 좋아요 했습니다.");
         } else {
             // Like 엔티티 생성 및 저장
             UserLike userLike = toEntity(likeRequest, userIp);
