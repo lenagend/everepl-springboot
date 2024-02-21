@@ -210,6 +210,11 @@ public class UrlInfoService {
         }
     }
 
+    public Page<UrlInfoResponse> findByIds(List<Long> ids, Pageable pageable) {
+        // Custom query or Specification to handle paging with IDs
+        return urlInfoRepository.findAllByIdsIn(ids, pageable).map(this::toDto);
+    }
+
     public Page<UrlInfoResponse> getUrlInfos(List<String> keywords, Pageable pageable) {
         Specification<UrlInfo> spec = UrlInfoSpecification.hasKeywordInUrl(keywords);
         Page<UrlInfo> urlInfos = urlInfoRepository.findAll(spec, pageable);

@@ -12,4 +12,6 @@ import java.util.Optional;
 
 public interface UrlInfoRepository extends JpaRepository<UrlInfo, Long>, JpaSpecificationExecutor<UrlInfo> {
     Optional<UrlInfo> findByUrl(String url);
+    Page<UrlInfo> findAllByIdsIn(List<Long> ids, Pageable pageable);
+
 }
