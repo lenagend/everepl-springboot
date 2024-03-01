@@ -5,6 +5,10 @@ import com.everepl.evereplspringboot.exceptions.InvalidUrlException;
 import com.everepl.evereplspringboot.entity.UrlInfo;
 import com.everepl.evereplspringboot.repository.UrlInfoRepository;
 import com.everepl.evereplspringboot.specification.UrlInfoSpecification;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -211,8 +215,14 @@ public class UrlInfoService {
     }
 
     public Page<UrlInfoResponse> findByIds(List<Long> ids, Pageable pageable) {
-        // Custom query or Specification to handle paging with IDs
-        return urlInfoRepository.findAllByIdsIn(ids, pageable).map(this::toDto);
+        Specification<UrlInfo> spec = new Specification<UrlInfo>() {
+            @Override
+            public Predicate toPredicate(Root<UrlInfo> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
+                return root.get("id").in(ids);
+            }
+        };
+
+        return urlInfoRepository.findAll(spec, pageable).map(this::toDto);
     }
 
     public Page<UrlInfoResponse> getUrlInfos(List<String> keywords, Pageable pageable) {

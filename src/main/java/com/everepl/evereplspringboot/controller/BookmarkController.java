@@ -4,6 +4,7 @@ import com.everepl.evereplspringboot.dto.BookmarkRequest;
 import com.everepl.evereplspringboot.dto.BookmarkResponse;
 import com.everepl.evereplspringboot.service.BookmarkService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,9 +26,9 @@ public class BookmarkController {
     }
 
     @PostMapping("/process")
-    public ResponseEntity<List<?>> processBookmarks(@RequestBody BookmarkRequest bookmarkRequest, Pageable pageable) {
+    public ResponseEntity<Page<?>> processBookmarks(@RequestBody BookmarkRequest bookmarkRequest, Pageable pageable) {
         try {
-            List<?> responses = bookmarkService.processBookmarks(bookmarkRequest, pageable);
+            Page<?> responses = bookmarkService.processBookmarks(bookmarkRequest, pageable);
             return ResponseEntity.ok(responses);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
