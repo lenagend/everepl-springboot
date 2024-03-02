@@ -1,21 +1,15 @@
 package com.everepl.evereplspringboot.service;
 
 import com.everepl.evereplspringboot.dto.BookmarkRequest;
-import com.everepl.evereplspringboot.dto.BookmarkResponse;
-import com.everepl.evereplspringboot.dto.UrlInfoResponse;
-import com.everepl.evereplspringboot.entity.Comment;
 import com.everepl.evereplspringboot.entity.Target;
-import com.everepl.evereplspringboot.entity.UrlInfo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class BookmarkService {
@@ -37,11 +31,11 @@ public class BookmarkService {
         switch (targetType) {
             case URLINFO:
                 // UrlInfoService에서 주어진 ID 리스트에 해당하는 UrlInfoResponse 객체들을 페이징 처리하여 조회
-                pageResponse = urlInfoService.findByIds(targetIds, pageable);
+                pageResponse = urlInfoService.getUrlInfoByIds(targetIds, pageable);
                 break;
             case COMMENT:
                 // COMMENT 처리 로직 (추후 구현)
-                pageResponse = new PageImpl<>(Collections.emptyList(), pageable, 0); //임시처리
+                pageResponse = commentService.getCommentsByIds(targetIds, pageable);
                 break;
             // 기타 타입에 대한 처리...
             default:

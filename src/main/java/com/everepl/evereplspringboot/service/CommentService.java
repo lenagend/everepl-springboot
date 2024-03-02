@@ -2,13 +2,20 @@ package com.everepl.evereplspringboot.service;
 
 import com.everepl.evereplspringboot.dto.CommentRequest;
 import com.everepl.evereplspringboot.dto.CommentResponse;
+import com.everepl.evereplspringboot.dto.UrlInfoResponse;
 import com.everepl.evereplspringboot.entity.Comment;
+import com.everepl.evereplspringboot.entity.UrlInfo;
 import com.everepl.evereplspringboot.repository.CommentRepository;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -81,7 +88,7 @@ public class CommentService {
 
         // 결과를 CommentResponse DTO로 변환합니다.
         List<CommentResponse> commentResponses = comments.stream()
-                .map(CommentService::toDto)
+                .map(this::toDto)
                 .collect(Collectors.toList());
 
         int commentCount = 0;
@@ -91,6 +98,17 @@ public class CommentService {
 
         // PageImpl를 사용하여 페이징된 결과를 반환합니다.
         return new PageImpl<>(commentResponses, pageable, commentCount);
+    }
+
+    public Page<CommentResponse> getCommentsByIds(List<Long> ids, Pageable pageable) {
+        Specification<Comment> spec = new Specification<Comment>() {
+            @Override
+            public Predicate toPredicate(Root<Comment> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
+                return root.get("id").in(ids);
+            }
+        };
+
+        return commentRepository.findAll(spec, pageable).map(this::toDto);
     }
 
     private Comment findRootComment(Comment comment) {
@@ -121,7 +139,7 @@ public class CommentService {
 
 
 
-    public static CommentResponse toDto(Comment comment) {
+    public CommentResponse toDto(Comment comment) {
         // 삭제된 댓글인 경우 대체 텍스트 설정
         String text = comment.isDeleted() ? "삭제된 댓글입니다" : comment.getText();
 

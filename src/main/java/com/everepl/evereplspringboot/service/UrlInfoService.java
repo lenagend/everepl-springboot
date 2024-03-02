@@ -214,7 +214,7 @@ public class UrlInfoService {
         }
     }
 
-    public Page<UrlInfoResponse> findByIds(List<Long> ids, Pageable pageable) {
+    public Page<UrlInfoResponse> getUrlInfoByIds(List<Long> ids, Pageable pageable) {
         Specification<UrlInfo> spec = new Specification<UrlInfo>() {
             @Override
             public Predicate toPredicate(Root<UrlInfo> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
