@@ -27,13 +27,8 @@ public class Comment {
     @NotNull(message = "비밀번호가 입력되지 않았습니다...")
     private String password;
 
-    private Long targetId;
-
-    @Enumerated(EnumType.STRING)
-    private targetType type;
-    public enum targetType { //추후 BOARD 등 추가.
-        URLINFO, COMMENT
-    }
+    @Embedded
+    private Target target;
 
     // Materialized Path를 활용할 때는 이 필드를 쿼리 로직에서 사용하지 않음
     @OneToMany(mappedBy = "parentComment", fetch = FetchType.LAZY)
@@ -113,20 +108,12 @@ public class Comment {
         this.password = password;
     }
 
-    public Long getTargetId() {
-        return targetId;
+    public Target getTarget() {
+        return target;
     }
 
-    public void setTargetId(Long targetId) {
-        this.targetId = targetId;
-    }
-
-    public targetType getType() {
-        return type;
-    }
-
-    public void setType(targetType type) {
-        this.type = type;
+    public void setTarget(Target target) {
+        this.target = target;
     }
 
     public List<Comment> getReplies() {

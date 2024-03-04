@@ -1,12 +1,12 @@
 package com.everepl.evereplspringboot.dto;
 
-import com.everepl.evereplspringboot.entity.Comment;
+import com.everepl.evereplspringboot.entity.Target;
 
 public record CommentRequest(
     String nickname,
     String text,
     String password,
     Long targetId,
-    Comment.targetType type,
+    Target.TargetType type,
     Boolean isDeleted
 ){}

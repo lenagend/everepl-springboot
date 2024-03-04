@@ -1,6 +1,6 @@
 package com.everepl.evereplspringboot.dto;
 
-import com.everepl.evereplspringboot.entity.Comment;
+import com.everepl.evereplspringboot.entity.Target;
 
 import java.time.LocalDateTime;
 
@@ -10,7 +10,7 @@ public record CommentResponse(
         String nickname,
         String text,
         Long targetId,
-        Comment.targetType type,
+        Target.TargetType type,
         String parentCommentNickname,
         String parentCommentUserIp,
         String path,

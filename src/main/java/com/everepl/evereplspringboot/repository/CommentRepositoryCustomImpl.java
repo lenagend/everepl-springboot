@@ -2,6 +2,7 @@ package com.everepl.evereplspringboot.repository;
 
 import com.everepl.evereplspringboot.entity.Comment;
 import com.everepl.evereplspringboot.entity.QComment;
+import com.everepl.evereplspringboot.entity.Target;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import jakarta.persistence.EntityManager;
@@ -19,14 +20,14 @@ public class CommentRepositoryCustomImpl implements CommentRepositoryCustom {
     private EntityManager entityManager;
 
     @Override
-    public List<Comment> findCommentsWithRepliesByTargetTypeAndTargetId(Comment.targetType type, Long targetId, Pageable pageable) {
+    public List<Comment> findCommentsWithRepliesByTarget_TypeAndTarget_TargetId(Target.TargetType type, Long targetId, Pageable pageable) {
         QComment qComment = QComment.comment;
 
         JPAQuery<Comment> query = new JPAQuery<>(entityManager);
 
         // type이 COMMENT 또는 입력받은 type일 경우의 조건
-        BooleanExpression typeCondition = qComment.type.eq(Comment.targetType.COMMENT)
-                .or(qComment.type.eq(type));
+        BooleanExpression typeCondition = qComment.target.type.eq(Target.TargetType.COMMENT)
+                .or(qComment.target.type.eq(type));
 
         List<Comment> comments = query.select(qComment)
                 .from(qComment)

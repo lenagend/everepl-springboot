@@ -4,6 +4,7 @@ import com.everepl.evereplspringboot.dto.CommentRequest;
 import com.everepl.evereplspringboot.dto.CommentResponse;
 import com.everepl.evereplspringboot.dto.UrlInfoResponse;
 import com.everepl.evereplspringboot.entity.Comment;
+import com.everepl.evereplspringboot.entity.Target;
 import com.everepl.evereplspringboot.entity.UrlInfo;
 import com.everepl.evereplspringboot.repository.CommentRepository;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -45,7 +46,7 @@ public class CommentService {
         newComment = commentRepository.save(newComment);
 
         // 대댓글인 경우 부모 댓글 설정 및 path 계산
-        if (commentRequest.type() == Comment.targetType.COMMENT) {
+        if (commentRequest.type() == Target.TargetType.COMMENT) {
             Comment parentComment = commentRepository.findById(commentRequest.targetId())
                     .orElseThrow(() -> new NoSuchElementException("부모 댓글을 찾을 수 없습니다."));
             newComment.setParentComment(parentComment);
@@ -59,7 +60,7 @@ public class CommentService {
             commentRepository.save(parentComment); // 변경된 부모 댓글을 저장
         } else {
             // 루트 댓글인 경우, path는 댓글의 ID
-            newComment.setPath(commentRequest.targetId() + "/" + newComment.getId());
+            newComment.setPath(newComment.getTarget().getTargetId() + "/" + newComment.getId()); // 수정됨
         }
 
         // path가 업데이트된 댓글을 다시 저장
@@ -68,22 +69,22 @@ public class CommentService {
         // 댓글 응답 생성 및 반환
         CommentResponse savedComment = toDto(newComment);
 
-
-        //루트댓글의 타켓타입과 타겟ID로 해당 엔티티의 commentCount 업데이트
+        // 루트댓글의 타켓타입과 타겟ID로 해당 엔티티의 commentCount 업데이트
         Comment rootComment = findRootComment(newComment);
 
-        if (rootComment.getType() == Comment.targetType.URLINFO) {
-            urlInfoService.updateCommentCount(rootComment.getTargetId(), 1);
-            urlInfoService.updatePopularityScore(rootComment.getTargetId());
+        if (rootComment.getTarget().getType() == Target.TargetType.URLINFO) { // 수정됨
+            urlInfoService.updateCommentCount(rootComment.getTarget().getTargetId(), 1); // 수정됨
+            urlInfoService.updatePopularityScore(rootComment.getTarget().getTargetId()); // 수정됨
         }
 
         return savedComment;
     }
 
 
+
     public Page<CommentResponse> getComments(CommentRequest commentRequest, Pageable pageable) {
         // 새로운 커스텀 메서드를 호출합니다.
-        List<Comment> comments = commentRepository.findCommentsWithRepliesByTargetTypeAndTargetId(
+        List<Comment> comments = commentRepository.findCommentsWithRepliesByTarget_TypeAndTarget_TargetId(
                 commentRequest.type(), commentRequest.targetId(), pageable);
 
         // 결과를 CommentResponse DTO로 변환합니다.
@@ -92,7 +93,7 @@ public class CommentService {
                 .collect(Collectors.toList());
 
         int commentCount = 0;
-        if (commentRequest.type() == Comment.targetType.URLINFO) {
+        if (commentRequest.type() == Target.TargetType.COMMENT) {
             commentCount = urlInfoService.getCommentCountForUrlInfo(commentRequest.targetId());
         }
 
@@ -140,10 +141,8 @@ public class CommentService {
 
 
     public CommentResponse toDto(Comment comment) {
-        // 삭제된 댓글인 경우 대체 텍스트 설정
         String text = comment.isDeleted() ? "삭제된 댓글입니다" : comment.getText();
 
-        // 부모 댓글의 닉네임 설정, 부모 댓글이 없는 경우 null
         String parentCommentNickname = null;
         String parentCommentUserIp = null;
         if (comment.getParentComment() != null) {
@@ -155,10 +154,10 @@ public class CommentService {
                 comment.getId(),
                 comment.getUserIp(),
                 comment.getNickname(),
-                text, // 수정된 텍스트 사용
-                comment.getTargetId(),
-                comment.getType(),
-                parentCommentNickname, // 부모 댓글의 닉네임 추가
+                text,
+                comment.getTarget().getTargetId(), // 수정됨
+                comment.getTarget().getType(), // 수정됨
+                parentCommentNickname,
                 parentCommentUserIp,
                 comment.getPath(),
                 comment.getCreatedAt(),
@@ -173,21 +172,24 @@ public class CommentService {
 
 
 
+
     public static Comment toEntity(CommentRequest request, String userIp, PasswordEncoder passwordEncoder) {
         Comment comment = new Comment();
         comment.setUserIp(userIp);
         comment.setNickname(request.nickname());
         comment.setText(request.text());
 
-        // 비밀번호 암호화
         String encryptedPassword = passwordEncoder.encode(request.password());
         comment.setPassword(encryptedPassword);
 
-        comment.setTargetId(request.targetId());
-        comment.setType(request.type());
+        Target target = new Target(); // Target 객체 생성
+        target.setTargetId(request.targetId()); // targetId 설정
+        target.setType(request.type()); // type 설정
+        comment.setTarget(target); // Comment 객체에 Target 객체 설정
 
         return comment;
     }
+
 
     public static void updateEntity(Comment comment, CommentRequest request, PasswordEncoder passwordEncoder) {
         if (request.nickname() != null) {
@@ -203,17 +205,25 @@ public class CommentService {
             comment.setPassword(encryptedPassword);
         }
 
+        // Target 객체를 업데이트합니다.
+        Target target = comment.getTarget(); // 기존 Target 객체를 가져옵니다.
+        if (target == null) {
+            target = new Target(); // Target 객체가 없으면 새로 생성합니다.
+            comment.setTarget(target); // 새로운 Target 객체를 Comment에 설정합니다.
+        }
+
         if (request.targetId() != null) {
-            comment.setTargetId(request.targetId());
+            target.setTargetId(request.targetId()); // Target 객체의 targetId를 업데이트합니다.
         }
 
         if (request.type() != null) {
-            comment.setType(request.type());
+            target.setType(request.type()); // Target 객체의 type을 업데이트합니다.
         }
 
         Boolean isDeleted = request.isDeleted() != null ? request.isDeleted() : false;
         comment.setDeleted(isDeleted);
     }
+
 
 
 }

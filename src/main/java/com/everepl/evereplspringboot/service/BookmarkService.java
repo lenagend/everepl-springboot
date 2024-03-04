@@ -34,7 +34,6 @@ public class BookmarkService {
                 pageResponse = urlInfoService.getUrlInfoByIds(targetIds, pageable);
                 break;
             case COMMENT:
-                // COMMENT 처리 로직 (추후 구현)
                 pageResponse = commentService.getCommentsByIds(targetIds, pageable);
                 break;
             // 기타 타입에 대한 처리...
