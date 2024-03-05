@@ -11,6 +11,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -138,17 +139,41 @@ public class CommentService {
         return toDto(updatedComment);
     }
 
+    public Page<CommentResponse> getCommentsByIdsWithRootUrl(List<Long> ids, Pageable pageable) {
+        Specification<Comment> spec = (root, query, criteriaBuilder) -> root.get("id").in(ids);
+
+        Page<Comment> comments = commentRepository.findAll(spec, pageable);
+
+        return comments.map(comment -> {
+            Comment rootComment = findRootComment(comment);
+            String rootUrl = createRootUrl(rootComment);
+            return toDtoWithRootUrl(comment, rootUrl);
+        });
+    }
+
+    private String createRootUrl(Comment rootComment) {
+        Target target = rootComment.getTarget();
+        Target.TargetType targetType = target.getType();
+        Long targetId = target.getTargetId();
+        String url = "";
+        switch (targetType) {
+            case URLINFO:
+                    url = "/view/" + targetId;
+                break;
+            default:
+               url = "/";
+        }
+        return url;
+    }
 
 
     public CommentResponse toDto(Comment comment) {
-        String text = comment.isDeleted() ? "삭제된 댓글입니다" : comment.getText();
+        String text = getCommentText(comment);
 
-        String parentCommentNickname = null;
-        String parentCommentUserIp = null;
-        if (comment.getParentComment() != null) {
-            parentCommentNickname = comment.getParentComment().getNickname();
-            parentCommentUserIp = comment.getParentComment().getUserIp();
-        }
+        Pair<String, String> parentDetails = getParentCommentDetails(comment); // 추출된 메서드 사용
+        String parentCommentNickname = parentDetails.getLeft(); // 'getFirst()' 대신 'getLeft()' 사용
+        String parentCommentUserIp = parentDetails.getRight(); // 'getSecond()' 대신 'getRight()' 사용
+
 
         return new CommentResponse(
                 comment.getId(),
@@ -165,12 +190,52 @@ public class CommentService {
                 comment.isDeleted(),
                 comment.getCommentCount(),
                 comment.getLikeCount(),
-                comment.getReportCount()
+                comment.getReportCount(),
+                null
         );
     }
 
+    public CommentResponse toDtoWithRootUrl(Comment comment, String rootUrl) {
+        String text = getCommentText(comment);
+
+        Pair<String, String> parentDetails = getParentCommentDetails(comment); // 추출된 메서드 사용
+        String parentCommentNickname = parentDetails.getLeft(); // 'getFirst()' 대신 'getLeft()' 사용
+        String parentCommentUserIp = parentDetails.getRight(); // 'getSecond()' 대신 'getRight()' 사용
 
 
+        return new CommentResponse(
+                comment.getId(),
+                comment.getUserIp(),
+                comment.getNickname(),
+                text,
+                comment.getTarget().getTargetId(), // 수정됨
+                comment.getTarget().getType(), // 수정됨
+                parentCommentNickname,
+                parentCommentUserIp,
+                comment.getPath(),
+                comment.getCreatedAt(),
+                comment.getUpdatedAt(),
+                comment.isDeleted(),
+                comment.getCommentCount(),
+                comment.getLikeCount(),
+                comment.getReportCount(),
+                rootUrl
+        );
+    }
+
+    private String getCommentText(Comment comment) {
+        return comment.isDeleted() ? "삭제된 댓글입니다" : comment.getText();
+    }
+
+    private Pair<String, String> getParentCommentDetails(Comment comment) {
+        String parentCommentNickname = null;
+        String parentCommentUserIp = null;
+        if (comment.getParentComment() != null) {
+            parentCommentNickname = comment.getParentComment().getNickname();
+            parentCommentUserIp = comment.getParentComment().getUserIp();
+        }
+        return Pair.of(parentCommentNickname, parentCommentUserIp);
+    }
 
 
     public static Comment toEntity(CommentRequest request, String userIp, PasswordEncoder passwordEncoder) {

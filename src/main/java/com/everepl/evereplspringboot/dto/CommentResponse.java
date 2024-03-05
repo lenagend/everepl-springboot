@@ -19,5 +19,6 @@ public record CommentResponse(
         Boolean isDeleted,
         Integer commentCount,
         Integer likeCount,
-        Integer reportCount
+        Integer reportCount,
+        String rootUrl
 ) {}
