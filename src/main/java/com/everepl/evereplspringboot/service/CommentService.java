@@ -56,12 +56,18 @@ public class CommentService {
             String newPath = parentComment.getPath() + "/" + newComment.getId();
             newComment.setPath(newPath);
 
+            //최상위 댓글의 타겟타입 저장
+            newComment.setRootTargetType(parentComment.getRootTargetType());
+
             // 부모 댓글의 commentCount를 업데이트
             parentComment.updateCommentCount(1);
             commentRepository.save(parentComment); // 변경된 부모 댓글을 저장
         } else {
             // 루트 댓글인 경우, path는 댓글의 ID
             newComment.setPath(newComment.getTarget().getTargetId() + "/" + newComment.getId()); // 수정됨
+
+            //최상위 댓글의 타겟타입 저장
+            newComment.setRootTargetType(commentRequest.type());
         }
 
         // path가 업데이트된 댓글을 다시 저장

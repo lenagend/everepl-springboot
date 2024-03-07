@@ -41,6 +41,10 @@ public class Comment {
 
     private String path;
 
+    // rootTargetType 필드 추가
+    @Enumerated(EnumType.STRING)
+    private Target.TargetType rootTargetType;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -134,6 +138,14 @@ public class Comment {
 
     public String getPath() {
         return path;
+    }
+
+    public Target.TargetType getRootTargetType() {
+        return rootTargetType;
+    }
+
+    public void setRootTargetType(Target.TargetType rootTargetType) {
+        this.rootTargetType = rootTargetType;
     }
 
     public void setPath(String path) {
