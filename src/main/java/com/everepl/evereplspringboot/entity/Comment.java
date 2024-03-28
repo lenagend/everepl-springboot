@@ -15,16 +15,11 @@ public class Comment {
     private Long id;
     private String userIp;
 
-    @NotNull(message = "닉네임이 입력되지 않았습니다...")
-    @Size(min = 2, max = 8, message = "닉네임은 2~8글자 사이여야 합니다.")
     private String nickname;
 
-    @NotNull(message = "내용이 입력되지 않았습니다...")
-    @Size(max = 5000, message = "댓글은 최대 5000자까지 입력 가능합니다.")
     @Column(length = 5000) // 데이터베이스 컬럼 길이도 설정
     private String text;
 
-    @NotNull(message = "비밀번호가 입력되지 않았습니다...")
     private String password;
 
     @Embedded
