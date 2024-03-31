@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,7 +29,7 @@ public class UrlInfoController {
     }
 
     @PostMapping
-    public ResponseEntity<?> processUrl(@RequestBody UrlInfoRequest urlInfoRequest) {
+    public ResponseEntity<?> processUrl(@Validated @RequestBody UrlInfoRequest urlInfoRequest) {
             UrlInfoResponse urlInfoResponse = urlInfoService.processUrl(urlInfoRequest.url());
             return ResponseEntity.ok(urlInfoResponse);
     }

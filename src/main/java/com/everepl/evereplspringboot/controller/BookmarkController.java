@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,7 +27,7 @@ public class BookmarkController {
     }
 
     @PostMapping("/process")
-    public ResponseEntity<Page<?>> processBookmarks(@RequestBody BookmarkRequest bookmarkRequest, Pageable pageable) {
+    public ResponseEntity<Page<?>> processBookmarks(@Validated @RequestBody BookmarkRequest bookmarkRequest, Pageable pageable) {
             Page<?> responses = bookmarkService.processBookmarks(bookmarkRequest, pageable);
             return ResponseEntity.ok(responses);
     }

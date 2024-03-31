@@ -6,6 +6,7 @@ import com.everepl.evereplspringboot.service.UserLikeService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,7 +22,7 @@ public class UserLikeController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<?> addLike(HttpServletRequest request, @RequestBody LikeRequest likeRequest) {
+    public ResponseEntity<?> addLike(HttpServletRequest request, @Validated @RequestBody LikeRequest likeRequest) {
         String userIp = request.getRemoteAddr();
         LikeResponse savedLike = userLikeService.addLike(likeRequest, userIp);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedLike);
