@@ -22,18 +22,10 @@ public class UserLikeController {
 
     @PostMapping("/add")
     public ResponseEntity<?> addLike(HttpServletRequest request, @RequestBody LikeRequest likeRequest) {
-        try {
-            String userIp = request.getRemoteAddr();
-            LikeResponse savedLike = userLikeService.addLike(likeRequest, userIp);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedLike);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().equals("이미 좋아요를 추가했습니다.")) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-            }
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 에러: " + e.getMessage());
-        }
+        String userIp = request.getRemoteAddr();
+        LikeResponse savedLike = userLikeService.addLike(likeRequest, userIp);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedLike);
     }
+
 
 }

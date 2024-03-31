@@ -29,37 +29,22 @@ public class UrlInfoController {
 
     @PostMapping
     public ResponseEntity<?> processUrl(@RequestBody UrlInfoRequest urlInfoRequest) {
-        try {
             UrlInfoResponse urlInfoResponse = urlInfoService.processUrl(urlInfoRequest.url());
             return ResponseEntity.ok(urlInfoResponse);
-        } catch (InvalidUrlException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getUrlInfo(@PathVariable Long id) {
-        try {
             UrlInfoResponse urlInfoResponse = urlInfoService.getUrlInfoById(id);
             return ResponseEntity.ok(urlInfoResponse);
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (DataAccessException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Database access error: " + e.getMessage());
-        }
     }
 
     @GetMapping
     public ResponseEntity<?> getUrlInfos(
             @RequestParam(required = false) List<String> filterStrings,
             Pageable pageable) {
-        try {
             Page<UrlInfoResponse> urlInfos = urlInfoService.getUrlInfos(filterStrings, pageable);
             return ResponseEntity.ok(urlInfos);
-        } catch (DataAccessException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Database access error: " + e.getMessage());
-        }
     }
-
 
 }

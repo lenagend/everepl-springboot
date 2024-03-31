@@ -27,12 +27,8 @@ public class BookmarkController {
 
     @PostMapping("/process")
     public ResponseEntity<Page<?>> processBookmarks(@RequestBody BookmarkRequest bookmarkRequest, Pageable pageable) {
-        try {
             Page<?> responses = bookmarkService.processBookmarks(bookmarkRequest, pageable);
             return ResponseEntity.ok(responses);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
     }
 
 }

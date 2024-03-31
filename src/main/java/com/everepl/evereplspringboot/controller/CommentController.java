@@ -29,25 +29,18 @@ public class CommentController {
     }
 
     @PostMapping
-    public ResponseEntity<?> addComment(HttpServletRequest request, @Validated(CreateGroup.class) @RequestBody CommentRequest commentRequest) {
-        try {
-            String userIp = request.getRemoteAddr();
-            CommentResponse savedComment = commentService.addComment(commentRequest, userIp);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedComment);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
+    public ResponseEntity<?> addComment(HttpServletRequest request,
+                                        @Validated(CreateGroup.class) @RequestBody CommentRequest commentRequest) {
+        String userIp = request.getRemoteAddr();
+        CommentResponse savedComment = commentService.addComment(commentRequest, userIp);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedComment);
     }
+
 
     @GetMapping
     public ResponseEntity<?> getComments(@Validated(ReadGroup.class) @ModelAttribute CommentRequest commentRequest, Pageable pageable) {
-        try {
             Page<CommentResponse> comments = commentService.getComments(commentRequest, pageable);
             return ResponseEntity.ok(comments);
-        }
-        catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("error: " + e.getMessage());
-        }
     }
 
 
@@ -55,19 +48,8 @@ public class CommentController {
     @PatchMapping
     public ResponseEntity<?> updateOrDeleteComment(
             @Validated(UpdateGroup.class) @RequestBody CommentRequest commentRequest) {
-
-        try {
             CommentResponse updatedComment = commentService.updateComment(commentRequest);
             return ResponseEntity.ok(updatedComment);
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("댓글을 찾을 수 없습니다: " + e.getMessage());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("잘못된 요청: " + e.getMessage());
-        } catch (DataAccessException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("데이터베이스 접근 오류: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("요청 처리 오류: " + e.getMessage());
-        }
     }
 
 }

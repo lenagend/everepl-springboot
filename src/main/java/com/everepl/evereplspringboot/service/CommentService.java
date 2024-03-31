@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class CommentService {
-    private static final Logger log = LoggerFactory.getLogger(UrlInfoService.class);
     private final CommentRepository commentRepository;
     private final UrlInfoService urlInfoService;
     private final PasswordEncoder passwordEncoder;

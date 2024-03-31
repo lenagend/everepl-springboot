@@ -95,10 +95,10 @@ public class UrlInfoService {
 
         } catch (MalformedURLException | URISyntaxException e) {
             log.error("URL 형식이 잘못되었습니다: {}", url, e);
-            throw new InvalidUrlException("URL 형식이 잘못되었습니다: " + url);
+            throw new RuntimeException(new InvalidUrlException("URL 형식이 잘못되었습니다: " + url));
         } catch (IOException e) {
             log.error("URL에 접근하는 중 네트워크 오류가 발생했습니다: {}", url, e);
-            throw new InvalidUrlException("URL에 접근하는 중 네트워크 오류가 발생했습니다: " + url);
+            throw new RuntimeException(new InvalidUrlException("URL에 접근하는 중 네트워크 오류가 발생했습니다: " + url));
         }
     }
 
@@ -175,12 +175,10 @@ public class UrlInfoService {
                 urlInfo.setFaviconSrc(faviconUrl);
             }
         } catch (SocketTimeoutException e) {
-            log.error("웹 페이지 정보를 가져오는 데 시간이 초과되었습니다: {}", urlInfo.getUrl(), e);
-            throw new InvalidUrlException("웹 페이지 정보를 가져오는 데 시간이 초과되었습니다: " + urlInfo.getUrl());
+            throw new RuntimeException(new InvalidUrlException("웹 페이지 정보를 가져오는 데 시간이 초과되었습니다: " + urlInfo.getUrl()));
         } catch (Exception e) {
-            log.error("웹 페이지 정보를 추출하는 중 오류 발생: {}", urlInfo.getUrl(), e);
-            throw new InvalidUrlException("웹 페이지 정보를 추출하는 중 오류 발생: " + urlInfo.getUrl());
-        } finally {
+            throw new RuntimeException(new InvalidUrlException("웹 페이지 정보를 추출하는 중 오류 발생: " + urlInfo.getUrl()));
+        }  finally {
             if (driver != null) {
                 driver.quit(); // 셀레니움 드라이버 종료
             }
@@ -258,27 +256,18 @@ public class UrlInfoService {
     // 인기도 점수 계산 및 저장 (UrlInfo 객체가 이미 조회된 상태)
     @Async
     public void updatePopularityScore(UrlInfo urlInfo) {
-        try {
             double score = calculatePopularityScore(urlInfo);
             urlInfo.setPopularityScore(score);
             urlInfoRepository.save(urlInfo);
-        } catch (Exception e) {
-            // 예외 처리 로직
-            log.error("Error updating popularity score for UrlInfo: " + urlInfo.getId(), e);
-        }
     }
 
     @Async
     public void updatePopularityScore(Long urlInfoId) {
-        try {
             UrlInfo urlInfo = urlInfoRepository.findById(urlInfoId)
                     .orElseThrow(() -> new NoSuchElementException("URL 정보가 존재하지 않습니다: " + urlInfoId));
             double score = calculatePopularityScore(urlInfo);
             urlInfo.setPopularityScore(score);
             urlInfoRepository.save(urlInfo);
-        } catch (Exception e) {
-            log.error("Error updating popularity score for UrlInfo: " + urlInfoId, e);
-        }
     }
 
     private double calculatePopularityScore(UrlInfo urlInfo) {
