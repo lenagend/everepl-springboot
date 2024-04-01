@@ -52,6 +52,10 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .anyRequest().permitAll()
                 )
+                .oauth2Login(oauth2 -> oauth2
+                        .defaultSuccessUrl("/user/me", true) // 로그인 성공 후 이동할 URL
+                        .failureUrl("/loginFailure") // 로그인 실패 시 이동할 URL
+                )
         // 모든 요청에 대해 접근 허용
         ;
 
