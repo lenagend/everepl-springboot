@@ -1,26 +1,31 @@
-package com.everepl.evereplspringboot.config;
+package com.everepl.evereplspringboot.security;
 
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.CorsConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
-
-import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig {
     private String allowedOrigins = "http://localhost:3000";
+
+    private CustomOAuth2UserService customOAuth2UserService;
+
+    private final AuthSuccessHandler authSuccessHandler;
+
+    public WebSecurityConfig(CustomOAuth2UserService customOAuth2UserService, AuthSuccessHandler authSuccessHandler) {
+        this.customOAuth2UserService = customOAuth2UserService;
+        this.authSuccessHandler = authSuccessHandler;
+    }
 
     @Bean
     public CorsFilter corsFilter(){
@@ -53,8 +58,11 @@ public class WebSecurityConfig {
                         .anyRequest().permitAll()
                 )
                 .oauth2Login(oauth2 -> oauth2
-                        .defaultSuccessUrl("/user/me", true) // 로그인 성공 후 이동할 URL
+                        .successHandler(authSuccessHandler) // 인증 성공 핸들러 등록
                         .failureUrl("/loginFailure") // 로그인 실패 시 이동할 URL
+                        .userInfoEndpoint(userInfo ->
+                                userInfo.userService(customOAuth2UserService) // CustomOAuth2UserService를 등록
+                        )
                 )
         // 모든 요청에 대해 접근 허용
         ;

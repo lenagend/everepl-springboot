@@ -15,6 +15,7 @@ public class User {
     private String imageUrl;
 
     // OAuth2 제공자로부터 받은 고유 ID
+
     private String providerId;
 
     // 로그인에 사용한 서비스 구분 (예: google, kakao, naver)

@@ -1,4 +1,4 @@
-package com.everepl.evereplspringboot.service;
+package com.everepl.evereplspringboot.security;
 
 import com.everepl.evereplspringboot.entity.User;
 import com.everepl.evereplspringboot.repository.UserRepository;
@@ -22,18 +22,21 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         OAuth2User oAuth2User = new DefaultOAuth2UserService().loadUser(userRequest);
 
         String provider = userRequest.getClientRegistration().getRegistrationId();
-        String providerId = oAuth2User.getAttribute("sub"); // 'sub'는 Google의 경우. 다른 제공자의 경우 변경 필요
+        String providerId = OAuth2Utils.extractProviderId(oAuth2User, provider);
 
-        User user = userRepository.findByProviderAndProviderId(provider, providerId);
-        if (user == null) {
-            user = new User();
-        }
+        User user = userRepository.findByProviderAndProviderId(provider, providerId)
+                .orElseGet(() -> {
+                    // 사용자가 데이터베이스에 없는 경우, 새로운 사용자 생성
+                    User newUser = new User();
+                    newUser.setProvider(provider);
+                    newUser.setProviderId(providerId);
+                    return newUser;
+                });
 
-        user.setProvider(provider);
-        user.setProviderId(providerId);
-
+        // 사용자 정보 저장
         userRepository.save(user);
 
         return oAuth2User;
     }
+
 }

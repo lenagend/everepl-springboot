@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -67,6 +68,16 @@ public class GlobalExceptionHandler {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", LocalDateTime.now());
         body.put("message", "요청한 항목을 찾을 수 없습니다.");
+
+        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+    }
+
+    //UsernameNotFoundException 예외처리
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<Object> handleUsernameNotFoundException(UsernameNotFoundException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", "유저정보를 불러올 수 없습니다");
 
         return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
     }
