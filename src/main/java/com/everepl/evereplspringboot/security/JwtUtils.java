@@ -1,5 +1,6 @@
 package com.everepl.evereplspringboot.security;
 
+import com.everepl.evereplspringboot.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -23,12 +24,12 @@ public class JwtUtils {
     }
 
     // JWT 생성
-    public String generateToken(Authentication authentication) {
-        // 인증 정보에서 사용자 이름 추출
-        String username = authentication.getName();
+    public String generateTokenWithUserInfo(User user) {
 
         return Jwts.builder()
-                .subject(username)
+                .subject(String.valueOf(user.getId()))
+                .claim("name", user.getName()) // 사용자 이름 클레임 추가
+                .claim("imageUrl", user.getImageUrl())
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + 3600000))
                 .signWith(this.getSigningKey())

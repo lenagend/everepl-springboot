@@ -13,14 +13,13 @@ public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String userIp;
 
-    private String nickname;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(length = 5000) // 데이터베이스 컬럼 길이도 설정
     private String text;
-
-    private String password;
 
     @Embedded
     private Target target;
@@ -75,20 +74,12 @@ public class Comment {
         this.id = id;
     }
 
-    public String getUserIp() {
-        return userIp;
+    public User getUser() {
+        return user;
     }
 
-    public void setUserIp(String userIp) {
-        this.userIp = userIp;
-    }
-
-    public String getNickname() {
-        return nickname;
-    }
-
-    public void setNickname(String nickname) {
-        this.nickname = nickname;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public String getText() {
@@ -99,13 +90,6 @@ public class Comment {
         this.text = text;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
 
     public Target getTarget() {
         return target;

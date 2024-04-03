@@ -9,8 +9,9 @@ public class OAuth2Utils {
     public static String extractProviderId(OAuth2User oAuth2User, String provider) {
         switch (provider) {
             case "google":
-            case "kakao":
                 return oAuth2User.getAttribute("sub");
+            case "kakao":
+                return oAuth2User.getAttribute("id");
             case "naver":
                 return Optional.ofNullable(oAuth2User.getAttribute("response"))
                         .map(response -> ((Map<String, Object>) response).get("id"))

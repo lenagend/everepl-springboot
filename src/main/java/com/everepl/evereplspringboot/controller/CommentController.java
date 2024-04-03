@@ -29,10 +29,8 @@ public class CommentController {
     }
 
     @PostMapping
-    public ResponseEntity<?> addComment(HttpServletRequest request,
-                                        @Validated(CreateGroup.class) @RequestBody CommentRequest commentRequest) {
-        String userIp = request.getRemoteAddr();
-        CommentResponse savedComment = commentService.addComment(commentRequest, userIp);
+    public ResponseEntity<?> addComment(@Validated(CreateGroup.class) @RequestBody CommentRequest commentRequest) {
+        CommentResponse savedComment = commentService.addComment(commentRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedComment);
     }
 
@@ -42,7 +40,6 @@ public class CommentController {
             Page<CommentResponse> comments = commentService.getComments(commentRequest, pageable);
             return ResponseEntity.ok(comments);
     }
-
 
 
     @PatchMapping

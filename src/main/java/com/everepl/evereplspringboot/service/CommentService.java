@@ -3,10 +3,13 @@ package com.everepl.evereplspringboot.service;
 import com.everepl.evereplspringboot.dto.CommentRequest;
 import com.everepl.evereplspringboot.dto.CommentResponse;
 import com.everepl.evereplspringboot.dto.UrlInfoResponse;
+import com.everepl.evereplspringboot.dto.UserDto;
 import com.everepl.evereplspringboot.entity.Comment;
 import com.everepl.evereplspringboot.entity.Target;
 import com.everepl.evereplspringboot.entity.UrlInfo;
+import com.everepl.evereplspringboot.entity.User;
 import com.everepl.evereplspringboot.repository.CommentRepository;
+import com.everepl.evereplspringboot.repository.UserRepository;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
@@ -18,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -25,22 +29,30 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class CommentService {
     private final CommentRepository commentRepository;
     private final UrlInfoService urlInfoService;
-    private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
 
-    public CommentService(CommentRepository commentRepository, UrlInfoService urlInfoService, PasswordEncoder passwordEncoder) {
+    public CommentService(CommentRepository commentRepository, UrlInfoService urlInfoService, UserRepository userRepository) {
         this.commentRepository = commentRepository;
         this.urlInfoService = urlInfoService;
-        this.passwordEncoder = passwordEncoder;
+        this.userRepository = userRepository;
     }
 
-    public CommentResponse addComment(CommentRequest commentRequest, String userIp) {
-        Comment newComment = toEntity(commentRequest, userIp, passwordEncoder);
+    public CommentResponse addComment(CommentRequest commentRequest) {
+        // commentRequest에서 userId를 추출
+        Long userId = commentRequest.userId();
+
+        // UserRepository를 사용하여 userId에 해당하는 User 객체를 찾음
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException(""));
+
+        Comment newComment = toEntity(commentRequest, user);
 
         // 먼저 댓글 저장하여 ID를 생성
         newComment = commentRepository.save(newComment);
@@ -126,23 +138,26 @@ public class CommentService {
     }
 
     public CommentResponse updateComment(CommentRequest commentRequest) {
-        Long commentId = commentRequest.targetId();
-        Comment comment = commentRepository.findById(commentId)
+        // 댓글 ID로 댓글 조회
+        Comment comment = commentRepository.findById(commentRequest.targetId())
                 .orElseThrow(() -> new NoSuchElementException("해당 댓글을 찾을 수 없습니다."));
 
-        // 비밀번호가 제공되었는지 확인하고, 제공된 경우 일치하는지 확인
-        if (commentRequest.password() != null && !passwordEncoder.matches(commentRequest.password(), comment.getPassword())) {
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        // 댓글 삭제 요청이 아닌 경우에만 텍스트 업데이트
+        if (Boolean.FALSE.equals(commentRequest.isDeleted())) {
+            comment.setText(commentRequest.text());
         }
 
-        // Comment 객체 업데이트
-        updateEntity(comment, commentRequest, passwordEncoder);
+        // 댓글 삭제 상태 설정
+        comment.setDeleted(Boolean.TRUE.equals(commentRequest.isDeleted()));
 
+        // 업데이트된 시간 설정
         comment.setUpdatedAt(LocalDateTime.now());
-        Comment updatedComment = commentRepository.save(comment);
 
+        // 변경사항 저장 및 반환
+        Comment updatedComment = commentRepository.save(comment);
         return toDto(updatedComment);
     }
+
 
     public Page<CommentResponse> getCommentsByIdsWithRootUrl(List<Long> ids, Pageable pageable) {
         Specification<Comment> spec = (root, query, criteriaBuilder) -> root.get("id").in(ids);
@@ -152,7 +167,7 @@ public class CommentService {
         return comments.map(comment -> {
             Comment rootComment = findRootComment(comment);
             String rootUrl = createRootUrl(rootComment);
-            return toDtoWithRootUrl(comment, rootUrl);
+            return toDto(comment, rootUrl);
         });
     }
 
@@ -173,22 +188,35 @@ public class CommentService {
 
 
     public CommentResponse toDto(Comment comment) {
+        return toDto(comment, null); // rootUrl 없이 메서드 호출
+    }
+
+    public CommentResponse toDto(Comment comment, String rootUrl) {
         String text = getCommentText(comment);
 
-        Pair<String, String> parentDetails = getParentCommentDetails(comment); // 추출된 메서드 사용
-        String parentCommentNickname = parentDetails.getLeft(); // 'getFirst()' 대신 'getLeft()' 사용
-        String parentCommentUserIp = parentDetails.getRight(); // 'getSecond()' 대신 'getRight()' 사용
+        // User 정보에서 UserDto 생성
+        UserDto user = new UserDto(
+                comment.getUser().getId(),
+                comment.getUser().getName(),
+                comment.getUser().getImageUrl()
+        );
+
+        // 부모 댓글의 User 정보를 Optional을 통해 안전하게 처리
+        UserDto parentCommentUser = Optional.ofNullable(comment.getParentComment())
+                .map(parentComment -> new UserDto(
+                        parentComment.getUser().getId(),
+                        parentComment.getUser().getName(),
+                        parentComment.getUser().getImageUrl()
+                )).orElse(null); // 부모 댓글이 없는 경우 null을 반환
 
 
         return new CommentResponse(
                 comment.getId(),
-                comment.getUserIp(),
-                comment.getNickname(),
+                user,
                 text,
-                comment.getTarget().getTargetId(), // 수정됨
-                comment.getTarget().getType(), // 수정됨
-                parentCommentNickname,
-                parentCommentUserIp,
+                comment.getTarget().getTargetId(),
+                comment.getTarget().getType(),
+                parentCommentUser,
                 comment.getPath(),
                 comment.getCreatedAt(),
                 comment.getUpdatedAt(),
@@ -196,61 +224,19 @@ public class CommentService {
                 comment.getCommentCount(),
                 comment.getLikeCount(),
                 comment.getReportCount(),
-                null
+                rootUrl // rootUrl 전달 (null일 수 있음)
         );
     }
 
-    public CommentResponse toDtoWithRootUrl(Comment comment, String rootUrl) {
-        String text = getCommentText(comment);
-
-        Pair<String, String> parentDetails = getParentCommentDetails(comment); // 추출된 메서드 사용
-        String parentCommentNickname = parentDetails.getLeft(); // 'getFirst()' 대신 'getLeft()' 사용
-        String parentCommentUserIp = parentDetails.getRight(); // 'getSecond()' 대신 'getRight()' 사용
-
-
-        return new CommentResponse(
-                comment.getId(),
-                comment.getUserIp(),
-                comment.getNickname(),
-                text,
-                comment.getTarget().getTargetId(), // 수정됨
-                comment.getTarget().getType(), // 수정됨
-                parentCommentNickname,
-                parentCommentUserIp,
-                comment.getPath(),
-                comment.getCreatedAt(),
-                comment.getUpdatedAt(),
-                comment.isDeleted(),
-                comment.getCommentCount(),
-                comment.getLikeCount(),
-                comment.getReportCount(),
-                rootUrl
-        );
-    }
 
     private String getCommentText(Comment comment) {
         return comment.isDeleted() ? "삭제된 댓글입니다" : comment.getText();
     }
 
-    private Pair<String, String> getParentCommentDetails(Comment comment) {
-        String parentCommentNickname = null;
-        String parentCommentUserIp = null;
-        if (comment.getParentComment() != null) {
-            parentCommentNickname = comment.getParentComment().getNickname();
-            parentCommentUserIp = comment.getParentComment().getUserIp();
-        }
-        return Pair.of(parentCommentNickname, parentCommentUserIp);
-    }
-
-
-    public static Comment toEntity(CommentRequest request, String userIp, PasswordEncoder passwordEncoder) {
+    public static Comment toEntity(CommentRequest request, User user) {
         Comment comment = new Comment();
-        comment.setUserIp(userIp);
-        comment.setNickname(request.nickname());
         comment.setText(request.text());
-
-        String encryptedPassword = passwordEncoder.encode(request.password());
-        comment.setPassword(encryptedPassword);
+        comment.setUser(user); // Comment 객체에 User 객체 설정
 
         Target target = new Target(); // Target 객체 생성
         target.setTargetId(request.targetId()); // targetId 설정
@@ -261,38 +247,7 @@ public class CommentService {
     }
 
 
-    public static void updateEntity(Comment comment, CommentRequest request, PasswordEncoder passwordEncoder) {
-        if (request.nickname() != null) {
-            comment.setNickname(request.nickname());
-        }
 
-        if (request.text() != null) {
-            comment.setText(request.text());
-        }
-
-        if (request.password() != null) {
-            String encryptedPassword = passwordEncoder.encode(request.password());
-            comment.setPassword(encryptedPassword);
-        }
-
-        // Target 객체를 업데이트합니다.
-        Target target = comment.getTarget(); // 기존 Target 객체를 가져옵니다.
-        if (target == null) {
-            target = new Target(); // Target 객체가 없으면 새로 생성합니다.
-            comment.setTarget(target); // 새로운 Target 객체를 Comment에 설정합니다.
-        }
-
-        if (request.targetId() != null) {
-            target.setTargetId(request.targetId()); // Target 객체의 targetId를 업데이트합니다.
-        }
-
-        if (request.type() != null) {
-            target.setType(request.type()); // Target 객체의 type을 업데이트합니다.
-        }
-
-        Boolean isDeleted = request.isDeleted() != null ? request.isDeleted() : false;
-        comment.setDeleted(isDeleted);
-    }
 
 
 
