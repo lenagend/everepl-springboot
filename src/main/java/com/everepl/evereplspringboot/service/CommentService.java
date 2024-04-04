@@ -44,9 +44,9 @@ public class CommentService {
         this.userRepository = userRepository;
     }
 
-    public CommentResponse addComment(CommentRequest commentRequest) {
+    public CommentResponse addComment(CommentRequest commentRequest, String authenticatedUserId) {
         // commentRequest에서 userId를 추출
-        Long userId = commentRequest.userId();
+        Long userId = Long.parseLong(authenticatedUserId);
 
         // UserRepository를 사용하여 userId에 해당하는 User 객체를 찾음
         User user = userRepository.findById(userId)

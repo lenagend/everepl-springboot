@@ -7,8 +7,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record CommentRequest(
-
-    @NotNull( message = "로그인 되지 않았습니다.")
     Long userId,
 
     @NotNull(groups = {CreateGroup.class, UpdateGroup.class}, message = "내용이 입력되지 않았습니다...")

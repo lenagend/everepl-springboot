@@ -4,12 +4,14 @@ package com.everepl.evereplspringboot.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
@@ -23,9 +25,38 @@ public class WebSecurityConfig {
 
     private final AuthSuccessHandler authSuccessHandler;
 
-    public WebSecurityConfig(CustomOAuth2UserService customOAuth2UserService, AuthSuccessHandler authSuccessHandler) {
+    public WebSecurityConfig(CustomOAuth2UserService customOAuth2UserService, @Lazy AuthSuccessHandler authSuccessHandler) {
         this.customOAuth2UserService = customOAuth2UserService;
         this.authSuccessHandler = authSuccessHandler;
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf((csrf)->csrf.disable())
+                .authorizeHttpRequests(authz -> authz
+                        .anyRequest().permitAll()
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(authSuccessHandler) // 인증 성공 핸들러 등록
+                        .failureUrl("/loginFailure") // 로그인 실패 시 이동할 URL
+                        .userInfoEndpoint(userInfo ->
+                                userInfo.userService(customOAuth2UserService) // CustomOAuth2UserService를 등록
+                        )
+                )
+                .addFilterBefore(jwtTokenFilter(), UsernamePasswordAuthenticationFilter.class); // JwtTokenFilter 추가
+
+        return http.build();
+    }
+
+    @Bean
+    public JwtTokenFilter jwtTokenFilter() {
+        return new JwtTokenFilter(jwtUtils()); // JwtUtils를 JwtTokenFilter에 주입
+    }
+
+    @Bean
+    public JwtUtils jwtUtils() {
+        return new JwtUtils();
     }
 
     @Bean
@@ -50,26 +81,4 @@ public class WebSecurityConfig {
 
         return new CorsFilter(source);
     }
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf((csrf)->csrf.disable())
-                .authorizeHttpRequests(authz -> authz
-                        .anyRequest().permitAll()
-                )
-                .oauth2Login(oauth2 -> oauth2
-                        .successHandler(authSuccessHandler) // 인증 성공 핸들러 등록
-                        .failureUrl("/loginFailure") // 로그인 실패 시 이동할 URL
-                        .userInfoEndpoint(userInfo ->
-                                userInfo.userService(customOAuth2UserService) // CustomOAuth2UserService를 등록
-                        )
-                )
-        // 모든 요청에 대해 접근 허용
-        ;
-
-        return http.build();
-    }
-
-
 }

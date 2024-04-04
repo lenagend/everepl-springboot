@@ -14,6 +14,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,9 +32,17 @@ public class CommentController {
 
     @PostMapping
     public ResponseEntity<?> addComment(@Validated(CreateGroup.class) @RequestBody CommentRequest commentRequest) {
-        CommentResponse savedComment = commentService.addComment(commentRequest);
+        // SecurityContext에서 인증된 사용자의 정보를 가져옴
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String authenticatedUserId = authentication.getName(); // 인증된 사용자의 고유 ID
+
+        // CommentService에 CommentRequest와 함께 userId도 전달
+        CommentResponse savedComment = commentService.addComment(commentRequest, authenticatedUserId);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(savedComment);
     }
+
+
 
 
     @GetMapping
