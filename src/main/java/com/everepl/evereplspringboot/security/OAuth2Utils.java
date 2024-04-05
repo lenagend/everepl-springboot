@@ -11,7 +11,7 @@ public class OAuth2Utils {
             case "google":
                 return oAuth2User.getAttribute("sub");
             case "kakao":
-                return oAuth2User.getAttribute("id");
+                return String.valueOf(oAuth2User.getAttribute("id"));
             case "naver":
                 return Optional.ofNullable(oAuth2User.getAttribute("response"))
                         .map(response -> ((Map<String, Object>) response).get("id"))
