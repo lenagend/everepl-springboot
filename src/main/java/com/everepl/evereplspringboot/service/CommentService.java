@@ -21,6 +21,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -44,7 +46,11 @@ public class CommentService {
         this.userRepository = userRepository;
     }
 
-    public CommentResponse addComment(CommentRequest commentRequest, String authenticatedUserId) {
+    public CommentResponse addComment(CommentRequest commentRequest) {
+        // SecurityContext에서 인증된 사용자의 정보를 가져옴
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String authenticatedUserId = authentication.getName(); // 인증된 사용자의 고유 ID
+
         // commentRequest에서 userId를 추출
         Long userId = Long.parseLong(authenticatedUserId);
 
@@ -91,8 +97,8 @@ public class CommentService {
         Comment rootComment = findRootComment(newComment);
 
         if (rootComment.getTarget().getType() == Target.TargetType.URLINFO) { // 수정됨
-            urlInfoService.updateCommentCount(rootComment.getTarget().getTargetId(), 1); // 수정됨
-            urlInfoService.updatePopularityScore(rootComment.getTarget().getTargetId()); // 수정됨
+//            urlInfoService.updateCommentCount(rootComment.getTarget().getTargetId(), 1); // 수정됨
+//            urlInfoService.updatePopularityScore(rootComment.getTarget().getTargetId()); // 수정됨
         }
 
         return savedComment;
@@ -142,6 +148,15 @@ public class CommentService {
         Comment comment = commentRepository.findById(commentRequest.targetId())
                 .orElseThrow(() -> new NoSuchElementException("해당 댓글을 찾을 수 없습니다."));
 
+        // SecurityContext에서 인증된 사용자의 정보를 가져옴
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long authenticatedUserId = Long.valueOf(authentication.getName()); // 인증된 사용자의 고유 ID
+
+        // 인증된 사용자가 댓글 작성자와 다를 경우 예외 발생
+        if (!comment.getUser().getId().equals(authenticatedUserId)) {
+            throw new IllegalStateException("댓글을 수정할 권한이 없습니다.");
+        }
+
         // 댓글 삭제 요청이 아닌 경우에만 텍스트 업데이트
         if (Boolean.FALSE.equals(commentRequest.isDeleted())) {
             comment.setText(commentRequest.text());
@@ -157,6 +172,7 @@ public class CommentService {
         Comment updatedComment = commentRepository.save(comment);
         return toDto(updatedComment);
     }
+
 
 
     public Page<CommentResponse> getCommentsByIdsWithRootUrl(List<Long> ids, Pageable pageable) {
