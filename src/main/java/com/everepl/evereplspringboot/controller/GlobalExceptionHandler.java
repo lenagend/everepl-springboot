@@ -77,7 +77,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleUsernameNotFoundException(UsernameNotFoundException ex) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", LocalDateTime.now());
-        body.put("message", "유저정보를 불러올 수 없습니다");
+        body.put("message", "유저정보를 불러올 수 없습니다. 로그인 상태를 확인해주세요.");
 
         return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
     }
