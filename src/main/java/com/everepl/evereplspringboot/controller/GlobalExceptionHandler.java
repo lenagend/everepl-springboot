@@ -82,6 +82,16 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
     }
 
+    //IllegalStateException 예외처리
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Object> handleIllegalStateException(IllegalStateException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", "권한이 없습니다.");
+
+        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+    }
+
     //데이터베이스 관련 예외처리
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<Object> handleDatabaseException(DataAccessException ex, WebRequest request) {
