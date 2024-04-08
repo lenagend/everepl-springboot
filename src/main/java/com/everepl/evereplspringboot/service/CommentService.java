@@ -47,12 +47,7 @@ public class CommentService {
     }
 
     public CommentResponse addComment(CommentRequest commentRequest) {
-        // SecurityContext에서 인증된 사용자의 정보를 가져옴
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String authenticatedUserId = authentication.getName(); // 인증된 사용자의 고유 ID
-
-        // commentRequest에서 userId를 추출
-        Long userId = Long.parseLong(authenticatedUserId);
+        Long userId = getAuthenticatedUserId(); // 인증된 사용자의 ID를 가져옴
 
         // UserRepository를 사용하여 userId에 해당하는 User 객체를 찾음
         User user = userRepository.findById(userId)
@@ -65,8 +60,7 @@ public class CommentService {
 
         // 대댓글인 경우 부모 댓글 설정 및 path 계산
         if (commentRequest.type() == Target.TargetType.COMMENT) {
-            Comment parentComment = commentRepository.findById(commentRequest.targetId())
-                    .orElseThrow(() -> new NoSuchElementException("부모 댓글을 찾을 수 없습니다."));
+            Comment parentComment = findCommentById(commentRequest.targetId());
             newComment.setParentComment(parentComment);
 
             // 부모 댓글의 path와 현재 댓글의 ID를 사용하여 새로운 path 생성
@@ -143,37 +137,59 @@ public class CommentService {
         return comment;
     }
 
+    // 댓글 업데이트 로직
     public CommentResponse updateComment(CommentRequest commentRequest) {
-        // 댓글 ID로 댓글 조회
-        Comment comment = commentRepository.findById(commentRequest.targetId())
-                .orElseThrow(() -> new NoSuchElementException("해당 댓글을 찾을 수 없습니다."));
+        Comment comment = findCommentById(commentRequest.targetId());
 
-        // SecurityContext에서 인증된 사용자의 정보를 가져옴
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Long authenticatedUserId = Long.valueOf(authentication.getName()); // 인증된 사용자의 고유 ID
+        Long authenticatedUserId = getAuthenticatedUserId();
 
-        // 인증된 사용자가 댓글 작성자와 다를 경우 예외 발생
-        if (!comment.getUser().getId().equals(authenticatedUserId)) {
-            throw new IllegalStateException("댓글을 수정할 권한이 없습니다.");
-        }
+        validateCommentOwner(comment, authenticatedUserId);
 
-        // 댓글 삭제 요청이 아닌 경우에만 텍스트 업데이트
-        if (Boolean.FALSE.equals(commentRequest.isDeleted())) {
-            comment.setText(commentRequest.text());
-        }
+        comment.setText(commentRequest.text());
 
-        // 댓글 삭제 상태 설정
-        comment.setDeleted(Boolean.TRUE.equals(commentRequest.isDeleted()));
+        comment.setModified(true);
 
-        // 업데이트된 시간 설정
         comment.setUpdatedAt(LocalDateTime.now());
 
-        // 변경사항 저장 및 반환
         Comment updatedComment = commentRepository.save(comment);
+
         return toDto(updatedComment);
     }
 
+    // 댓글 '삭제' 로직
+    public CommentResponse deleteComment(Long id) {
+        Comment comment = findCommentById(id);
 
+        Long authenticatedUserId = getAuthenticatedUserId();
+
+        validateCommentOwner(comment, authenticatedUserId);
+
+        comment.setDeleted(true);
+
+        comment.setUpdatedAt(LocalDateTime.now());
+
+        Comment updatedComment = commentRepository.save(comment);
+
+        return toDto(updatedComment);
+    }
+
+    // 댓글을 ID로 찾는 메소드
+    private Comment findCommentById(Long commentId) {
+        return commentRepository.findById(commentId)
+                .orElseThrow(() -> new NoSuchElementException("해당 댓글을 찾을 수 없습니다."));
+    }
+
+    // 댓글의 주인을 검증하는 메소드
+    private void validateCommentOwner(Comment comment, Long userId) {
+        if (!comment.getUser().getId().equals(userId)) {
+            throw new IllegalStateException("댓글을 수정할 권한이 없습니다.");
+        }
+    }
+
+    private Long getAuthenticatedUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return Long.parseLong(authentication.getName()); // 인증된 사용자의 고유 ID 반환
+    }
 
     public Page<CommentResponse> getCommentsByIdsWithRootUrl(List<Long> ids, Pageable pageable) {
         Specification<Comment> spec = (root, query, criteriaBuilder) -> root.get("id").in(ids);
@@ -213,7 +229,7 @@ public class CommentService {
         // User 정보에서 UserDto 생성
         UserDto user = new UserDto(
                 comment.getUser().getId(),
-                comment.getUser().getName(),
+                comment.getUser().getDisplayName(),
                 comment.getUser().getImageUrl()
         );
 
@@ -221,7 +237,7 @@ public class CommentService {
         UserDto parentCommentUser = Optional.ofNullable(comment.getParentComment())
                 .map(parentComment -> new UserDto(
                         parentComment.getUser().getId(),
-                        parentComment.getUser().getName(),
+                        parentComment.getUser().getDisplayName(),
                         parentComment.getUser().getImageUrl()
                 )).orElse(null); // 부모 댓글이 없는 경우 null을 반환
 
@@ -237,6 +253,7 @@ public class CommentService {
                 comment.getCreatedAt(),
                 comment.getUpdatedAt(),
                 comment.isDeleted(),
+                comment.isModified(),
                 comment.getCommentCount(),
                 comment.getLikeCount(),
                 comment.getReportCount(),

@@ -15,6 +15,7 @@ public record CommentResponse(
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         Boolean isDeleted,
+        Boolean isModified,
         Integer commentCount,
         Integer likeCount,
         Integer reportCount,

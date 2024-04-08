@@ -17,7 +17,5 @@ public record CommentRequest(
     Long targetId,
 
     @NotNull
-    Target.TargetType type,
-
-    Boolean isDeleted
+    Target.TargetType type
 ){}

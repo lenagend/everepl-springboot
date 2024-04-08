@@ -43,6 +43,7 @@ public class Comment {
     private LocalDateTime updatedAt;
 
     private boolean isDeleted = false;
+    private boolean isModified = false;
 
     private Integer commentCount = 0;
     private Integer likeCount = 0;
@@ -89,7 +90,6 @@ public class Comment {
     public void setText(String text) {
         this.text = text;
     }
-
 
     public Target getTarget() {
         return target;
@@ -153,6 +153,14 @@ public class Comment {
 
     public void setDeleted(boolean deleted) {
         isDeleted = deleted;
+    }
+
+    public boolean isModified() {
+        return isModified;
+    }
+
+    public void setModified(boolean modified) {
+        isModified = modified;
     }
 
     public Integer getCommentCount() {
