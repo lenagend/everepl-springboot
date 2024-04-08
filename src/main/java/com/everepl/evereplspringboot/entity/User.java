@@ -60,4 +60,8 @@ public class User {
     public void setProvider(String provider) {
         this.provider = provider;
     }
+
+    public String getDisplayName() {
+        return (name != null && !name.isEmpty()) ? name : "유저" + id;
+    }
 }
