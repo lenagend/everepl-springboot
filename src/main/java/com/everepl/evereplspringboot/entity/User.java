@@ -2,6 +2,9 @@ package com.everepl.evereplspringboot.entity;
 
 import jakarta.persistence.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "users")
 public class User {
@@ -20,6 +23,9 @@ public class User {
 
     // 로그인에 사용한 서비스 구분 (예: google, kakao, naver)
     private String provider;
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private Set<UserLike> likes = new HashSet<>();
 
     public Long getId() {
         return id;
@@ -63,5 +69,13 @@ public class User {
 
     public String getDisplayName() {
         return (name != null && !name.isEmpty()) ? name : "유저" + id;
+    }
+
+    public Set<UserLike> getLikes() {
+        return likes;
+    }
+
+    public void setLikes(Set<UserLike> likes) {
+        this.likes = likes;
     }
 }

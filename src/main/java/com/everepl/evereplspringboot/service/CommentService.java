@@ -2,11 +2,9 @@ package com.everepl.evereplspringboot.service;
 
 import com.everepl.evereplspringboot.dto.CommentRequest;
 import com.everepl.evereplspringboot.dto.CommentResponse;
-import com.everepl.evereplspringboot.dto.UrlInfoResponse;
 import com.everepl.evereplspringboot.dto.UserDto;
 import com.everepl.evereplspringboot.entity.Comment;
 import com.everepl.evereplspringboot.entity.Target;
-import com.everepl.evereplspringboot.entity.UrlInfo;
 import com.everepl.evereplspringboot.entity.User;
 import com.everepl.evereplspringboot.repository.CommentRepository;
 import com.everepl.evereplspringboot.repository.UserRepository;
@@ -14,9 +12,6 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import org.apache.commons.lang3.tuple.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -24,11 +19,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -38,22 +31,18 @@ import java.util.stream.Collectors;
 public class CommentService {
     private final CommentRepository commentRepository;
     private final UrlInfoService urlInfoService;
-    private final UserRepository userRepository;
+    private final UserInfoService userInfoService;
 
-    public CommentService(CommentRepository commentRepository, UrlInfoService urlInfoService, UserRepository userRepository) {
+    public CommentService(CommentRepository commentRepository, UrlInfoService urlInfoService, UserInfoService userInfoService) {
         this.commentRepository = commentRepository;
         this.urlInfoService = urlInfoService;
-        this.userRepository = userRepository;
+        this.userInfoService = userInfoService;
     }
 
     public CommentResponse addComment(CommentRequest commentRequest) {
-        Long userId = getAuthenticatedUserId(); // 인증된 사용자의 ID를 가져옴
+        User currentUser = userInfoService.getAuthenticatedUser();
 
-        // UserRepository를 사용하여 userId에 해당하는 User 객체를 찾음
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UsernameNotFoundException(""));
-
-        Comment newComment = toEntity(commentRequest, user);
+        Comment newComment = toEntity(commentRequest, currentUser);
 
         // 먼저 댓글 저장하여 ID를 생성
         newComment = commentRepository.save(newComment);
@@ -141,9 +130,9 @@ public class CommentService {
     public CommentResponse updateComment(CommentRequest commentRequest) {
         Comment comment = findCommentById(commentRequest.targetId());
 
-        Long authenticatedUserId = getAuthenticatedUserId();
+        User currentUser = userInfoService.getAuthenticatedUser();
 
-        validateCommentOwner(comment, authenticatedUserId);
+        validateCommentOwner(comment, currentUser.getId());
 
         comment.setText(commentRequest.text());
 
@@ -160,9 +149,9 @@ public class CommentService {
     public CommentResponse deleteComment(Long id) {
         Comment comment = findCommentById(id);
 
-        Long authenticatedUserId = getAuthenticatedUserId();
+        User currentUser = userInfoService.getAuthenticatedUser();
 
-        validateCommentOwner(comment, authenticatedUserId);
+        validateCommentOwner(comment, currentUser.getId());
 
         comment.setDeleted(true);
 
@@ -186,10 +175,7 @@ public class CommentService {
         }
     }
 
-    private Long getAuthenticatedUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return Long.parseLong(authentication.getName()); // 인증된 사용자의 고유 ID 반환
-    }
+
 
     public Page<CommentResponse> getCommentsByIdsWithRootUrl(List<Long> ids, Pageable pageable) {
         Specification<Comment> spec = (root, query, criteriaBuilder) -> root.get("id").in(ids);

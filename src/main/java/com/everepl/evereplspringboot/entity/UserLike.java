@@ -11,13 +11,16 @@ public class UserLike {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String userIp;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id") // 외래키로 사용할 컬럼명을 지정합니다.
+    private User user;
 
     @Embedded
     private Target target;
 
     @Column(nullable = false)
     private LocalDate likedDate;
+
 
     @PrePersist
     protected void onCreate() {
@@ -32,12 +35,12 @@ public class UserLike {
         this.id = id;
     }
 
-    public String getUserIp() {
-        return userIp;
+    public User getUser() {
+        return user;
     }
 
-    public void setUserIp(String userIp) {
-        this.userIp = userIp;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public Target getTarget() {
