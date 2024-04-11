@@ -25,9 +25,12 @@ public class WebSecurityConfig {
 
     private final AuthSuccessHandler authSuccessHandler;
 
-    public WebSecurityConfig(CustomOAuth2UserService customOAuth2UserService, @Lazy AuthSuccessHandler authSuccessHandler) {
+    private final JwtTokenFilter jwtTokenFilter;
+
+    public WebSecurityConfig(CustomOAuth2UserService customOAuth2UserService, AuthSuccessHandler authSuccessHandler, JwtTokenFilter jwtTokenFilter) {
         this.customOAuth2UserService = customOAuth2UserService;
         this.authSuccessHandler = authSuccessHandler;
+        this.jwtTokenFilter = jwtTokenFilter;
     }
 
     @Bean
@@ -44,19 +47,9 @@ public class WebSecurityConfig {
                                 userInfo.userService(customOAuth2UserService) // CustomOAuth2UserService를 등록
                         )
                 )
-                .addFilterBefore(jwtTokenFilter(), UsernamePasswordAuthenticationFilter.class); // JwtTokenFilter 추가
+                .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class); // JwtTokenFilter 추가
 
         return http.build();
-    }
-
-    @Bean
-    public JwtTokenFilter jwtTokenFilter() {
-        return new JwtTokenFilter(jwtUtils()); // JwtUtils를 JwtTokenFilter에 주입
-    }
-
-    @Bean
-    public JwtUtils jwtUtils() {
-        return new JwtUtils();
     }
 
     @Bean

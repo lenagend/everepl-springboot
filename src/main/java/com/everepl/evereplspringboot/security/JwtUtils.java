@@ -36,11 +36,19 @@ public class JwtUtils {
                 .compact();
     }
 
-    Claims extractAllClaims(String token){
+    public Claims extractAllClaims(String token){
         return Jwts.parser()
                 .verifyWith(this.getSigningKey())
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    public static String extractToken(String bearerToken) {
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        } else {
+            throw new IllegalArgumentException("토큰이 유효하지 않습니다.");
+        }
     }
 }

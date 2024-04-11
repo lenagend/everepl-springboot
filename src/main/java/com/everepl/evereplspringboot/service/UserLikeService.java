@@ -20,19 +20,19 @@ public class UserLikeService {
     private final CommentService commentService;
     private final UrlInfoService urlInfoService;
     private final UserLikeRepository userLikeRepository;
-    private final UserInfoService userInfoService;
+    private final UserService userService;
 
-    public UserLikeService(CommentService commentService, UrlInfoService urlInfoService, UserLikeRepository userLikeRepository, UserInfoService userInfoService) {
+    public UserLikeService(CommentService commentService, UrlInfoService urlInfoService, UserLikeRepository userLikeRepository, UserService userService) {
         this.commentService = commentService;
         this.urlInfoService = urlInfoService;
         this.userLikeRepository = userLikeRepository;
-        this.userInfoService = userInfoService;
+        this.userService = userService;
     }
 
     public LikeResponse addLike(LikeRequest likeRequest) {
         LocalDate today = LocalDate.now();
 
-        User currentUser = userInfoService.getAuthenticatedUser();
+        User currentUser = userService.getAuthenticatedUser();
 
         // 오늘 해당 IP에서 해당 대상에 대해 좋아요를 이미 추가했는지 확인
         boolean alreadyLiked = userLikeRepository.existsByUserAndTargetTargetIdAndTargetTypeAndLikedDate(
@@ -76,7 +76,7 @@ public class UserLikeService {
     }
 
     public Page<?> processUserLikes(LikeRequest likeRequest, Pageable pageable) {
-        User currentUser = userInfoService.getAuthenticatedUser(); // 현재 로그인한 사용자 정보를 가져옴
+        User currentUser = userService.getAuthenticatedUser(); // 현재 로그인한 사용자 정보를 가져옴
         Target.TargetType targetType = likeRequest.type();
         List<Long> targetIds = userLikeRepository.findTargetIdsByUserAndTargetType(currentUser, targetType);
 

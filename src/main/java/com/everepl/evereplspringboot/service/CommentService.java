@@ -7,7 +7,6 @@ import com.everepl.evereplspringboot.entity.Comment;
 import com.everepl.evereplspringboot.entity.Target;
 import com.everepl.evereplspringboot.entity.User;
 import com.everepl.evereplspringboot.repository.CommentRepository;
-import com.everepl.evereplspringboot.repository.UserRepository;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
@@ -16,9 +15,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -31,16 +27,16 @@ import java.util.stream.Collectors;
 public class CommentService {
     private final CommentRepository commentRepository;
     private final UrlInfoService urlInfoService;
-    private final UserInfoService userInfoService;
+    private final UserService userService;
 
-    public CommentService(CommentRepository commentRepository, UrlInfoService urlInfoService, UserInfoService userInfoService) {
+    public CommentService(CommentRepository commentRepository, UrlInfoService urlInfoService, UserService userService) {
         this.commentRepository = commentRepository;
         this.urlInfoService = urlInfoService;
-        this.userInfoService = userInfoService;
+        this.userService = userService;
     }
 
     public CommentResponse addComment(CommentRequest commentRequest) {
-        User currentUser = userInfoService.getAuthenticatedUser();
+        User currentUser = userService.getAuthenticatedUser();
 
         Comment newComment = toEntity(commentRequest, currentUser);
 
@@ -130,7 +126,7 @@ public class CommentService {
     public CommentResponse updateComment(CommentRequest commentRequest) {
         Comment comment = findCommentById(commentRequest.targetId());
 
-        User currentUser = userInfoService.getAuthenticatedUser();
+        User currentUser = userService.getAuthenticatedUser();
 
         validateCommentOwner(comment, currentUser.getId());
 
@@ -149,7 +145,7 @@ public class CommentService {
     public CommentResponse deleteComment(Long id) {
         Comment comment = findCommentById(id);
 
-        User currentUser = userInfoService.getAuthenticatedUser();
+        User currentUser = userService.getAuthenticatedUser();
 
         validateCommentOwner(comment, currentUser.getId());
 

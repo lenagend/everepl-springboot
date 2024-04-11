@@ -1,7 +1,6 @@
 package com.everepl.evereplspringboot.security;
 
-import com.everepl.evereplspringboot.entity.User;
-import com.everepl.evereplspringboot.repository.UserRepository;
+import com.everepl.evereplspringboot.service.UserService;
 import jakarta.transaction.Transactional;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -12,10 +11,10 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
-    private final UserRepository userRepository;
+    private final UserService userService;
 
-    public CustomOAuth2UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public CustomOAuth2UserService(UserService userService) {
+        this.userService = userService;
     }
 
     @Override
@@ -26,17 +25,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         String provider = userRequest.getClientRegistration().getRegistrationId();
         String providerId = OAuth2Utils.extractProviderId(oAuth2User, provider);
 
-        User user = userRepository.findByProviderAndProviderId(provider, providerId)
-                .orElseGet(() -> {
-                    // 사용자가 데이터베이스에 없는 경우, 새로운 사용자 생성
-                    User newUser = new User();
-                    newUser.setProvider(provider);
-                    newUser.setProviderId(providerId);
-                    return newUser;
-                });
-
-        // 사용자 정보 저장
-        userRepository.save(user);
+        // UserService를 사용하여 사용자 정보를 처리
+        userService.loadOrCreateUser(provider, providerId);
 
         return oAuth2User;
     }

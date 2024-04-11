@@ -1,25 +1,29 @@
 package com.everepl.evereplspringboot.security;
 
 import com.everepl.evereplspringboot.entity.User;
+import com.everepl.evereplspringboot.service.UserService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
 
+@Component
 public class JwtTokenFilter extends OncePerRequestFilter {
 
-    private final JwtUtils jwtUtils;
+    private final UserService userService;
 
-    public JwtTokenFilter(JwtUtils jwtUtils) {
-        this.jwtUtils = jwtUtils;
+    public JwtTokenFilter(UserService userService) {
+        this.userService = userService;
     }
 
     @Override
@@ -30,8 +34,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             if (token != null && token.startsWith("Bearer ")) {
                 token = token.substring(7);
 
-                Claims claims = jwtUtils.extractAllClaims(token);
-                String userId = claims.getSubject(); // 유저 ID 추출
+                String userId = userService.getUserIdFromToken(token);
 
                 // 단순히 사용자 ID를 기반으로 Authentication 객체 생성
                 Authentication authentication = new UsernamePasswordAuthenticationToken(
