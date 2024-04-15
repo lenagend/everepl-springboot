@@ -2,6 +2,8 @@ package com.everepl.evereplspringboot.controller;
 
 import com.everepl.evereplspringboot.dto.LikeRequest;
 import com.everepl.evereplspringboot.dto.LikeResponse;
+import com.everepl.evereplspringboot.dto.validation.CreateGroup;
+import com.everepl.evereplspringboot.dto.validation.UpdateGroup;
 import com.everepl.evereplspringboot.service.UserLikeService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
@@ -21,13 +23,13 @@ public class UserLikeController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<?> addLike(@Validated @RequestBody LikeRequest likeRequest) {
+    public ResponseEntity<?> addLike(@Validated(UpdateGroup.class) @RequestBody LikeRequest likeRequest) {
         LikeResponse savedLike = userLikeService.addLike(likeRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedLike);
     }
 
     @GetMapping
-    public ResponseEntity<?> getUserLikes(@Validated @RequestBody LikeRequest likeRequest, Pageable pageable) {
+    public ResponseEntity<?> getUserLikes(@Validated @ModelAttribute LikeRequest likeRequest, Pageable pageable) {
         Page<?> likes = userLikeService.processUserLikes(likeRequest, pageable);
         return ResponseEntity.ok(likes);
     }
