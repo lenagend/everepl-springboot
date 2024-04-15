@@ -30,8 +30,6 @@ public class CommentController {
     }
 
 
-
-
     @GetMapping
     public ResponseEntity<?> getComments(@Validated(ReadGroup.class) @ModelAttribute CommentRequest commentRequest, Pageable pageable) {
             Page<CommentResponse> comments = commentService.getComments(commentRequest, pageable);
