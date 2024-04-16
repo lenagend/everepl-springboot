@@ -76,14 +76,12 @@ public class CommentService {
         Comment rootComment = findRootComment(newComment);
 
         if (rootComment.getTarget().getType() == Target.TargetType.URLINFO) { // 수정됨
-//            urlInfoService.updateCommentCount(rootComment.getTarget().getTargetId(), 1); // 수정됨
-//            urlInfoService.updatePopularityScore(rootComment.getTarget().getTargetId()); // 수정됨
+            urlInfoService.updateCommentCount(rootComment.getTarget().getTargetId(), 1); // 수정됨
+            urlInfoService.updatePopularityScore(rootComment.getTarget().getTargetId()); // 수정됨
         }
 
         return savedComment;
     }
-
-
 
     public Page<CommentResponse> getComments(CommentRequest commentRequest, Pageable pageable) {
         // 새로운 커스텀 메서드를 호출합니다.
@@ -198,6 +196,18 @@ public class CommentService {
                url = "/";
         }
         return url;
+    }
+
+    public Page<CommentResponse> getMyComments(Pageable pageable) {
+        User currentUser = userService.getAuthenticatedUser();
+
+        return commentRepository.findByUser(currentUser, pageable)
+                .map(comment -> {
+                    Comment rootComment = findRootComment(comment);
+                    String rootUrl = createRootUrl(rootComment);
+                    return toDto(comment, rootUrl);
+                });
+
     }
 
 

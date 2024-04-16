@@ -24,7 +24,6 @@ public class CommentController {
 
     @PostMapping
     public ResponseEntity<?> addComment(@Validated(CreateGroup.class) @RequestBody CommentRequest commentRequest) {
-        // CommentService에 CommentRequest와 함께 userId도 전달
         CommentResponse savedComment = commentService.addComment(commentRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedComment);
     }
@@ -35,7 +34,6 @@ public class CommentController {
             Page<CommentResponse> comments = commentService.getComments(commentRequest, pageable);
             return ResponseEntity.ok(comments);
     }
-
 
     @PatchMapping
     public ResponseEntity<?> updateComment(
@@ -48,6 +46,12 @@ public class CommentController {
     public ResponseEntity<?> deleteComment(@PathVariable Long id) {
         commentService.deleteComment(id);  // 실제로는 isDeleted를 true로 설정
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/my")
+    public ResponseEntity<?> getMyComments(Pageable pageable) {
+        Page<CommentResponse> comments = commentService.getMyComments(pageable);
+        return ResponseEntity.ok(comments);
     }
 
 }
