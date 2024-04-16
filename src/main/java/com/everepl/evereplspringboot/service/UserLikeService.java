@@ -69,6 +69,7 @@ public class UserLikeService {
                 urlInfoService.updateLikeCount(likeRequest.targetId(), increment);
                 break;
             case COMMENT:
+                commentService.updateLikeCount(likeRequest.targetId(), increment);
                 break;
             default:
                 throw new IllegalArgumentException("지원하지 않는 타입입니다: " + likeRequest.type());

@@ -5,6 +5,7 @@ import com.everepl.evereplspringboot.dto.CommentResponse;
 import com.everepl.evereplspringboot.dto.UserDto;
 import com.everepl.evereplspringboot.entity.Comment;
 import com.everepl.evereplspringboot.entity.Target;
+import com.everepl.evereplspringboot.entity.UrlInfo;
 import com.everepl.evereplspringboot.entity.User;
 import com.everepl.evereplspringboot.repository.CommentRepository;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -168,8 +170,33 @@ public class CommentService {
             throw new IllegalStateException("댓글을 수정할 권한이 없습니다.");
         }
     }
+    // 증감
+    public void updateLikeCount(Long commentId, int increment) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new NoSuchElementException("댓글 정보가 존재하지 않습니다: " + commentId));
+        comment.updateLikeCount(increment); // 메서드명과 로직 변경
+        updatePopularityScore(comment);
+    }
 
+    // 인기도 점수 계산 및 저장 (UrlInfo 객체가 이미 조회된 상태)
+    @Async
+    public void updatePopularityScore(Comment comment) {
+        double score = calculatePopularityScore(comment);
+        comment.setPopularityScore(score);
+        commentRepository.save(comment);
+    }
 
+    private double calculatePopularityScore(Comment comment) {
+        // 가중치 설정
+        double likeWeight = 0.6;   // 좋아요에 대한 높은 가중치
+        double commentWeight = 0.3; // 댓글에 대한 중간 가중치
+        double reportPenalty = 0.4; // 신고에 대한 감점
+
+        // 계산 로직
+        return  (comment.getLikeCount() * likeWeight) +
+                (comment.getCommentCount() * commentWeight) -
+                (comment.getReportCount() * reportPenalty);
+    }
 
     public Page<CommentResponse> getCommentsByIdsWithRootUrl(List<Long> ids, Pageable pageable) {
         Specification<Comment> spec = (root, query, criteriaBuilder) -> root.get("id").in(ids);

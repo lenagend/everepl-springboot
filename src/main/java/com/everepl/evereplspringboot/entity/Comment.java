@@ -195,8 +195,8 @@ public class Comment {
         this.popularityScore = popularityScore;
     }
 
-    public void incrementLikeCount(){
-        this.likeCount += 1;
+    public void updateLikeCount(int increment) {
+        this.likeCount += increment;
     }
 
     public void updateCommentCount(int increment) {
