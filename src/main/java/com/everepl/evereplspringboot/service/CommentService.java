@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -30,11 +31,13 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final UrlInfoService urlInfoService;
     private final UserService userService;
+    private SimpMessagingTemplate messagingTemplate;
 
-    public CommentService(CommentRepository commentRepository, UrlInfoService urlInfoService, UserService userService) {
+    public CommentService(CommentRepository commentRepository, UrlInfoService urlInfoService, UserService userService, SimpMessagingTemplate messagingTemplate) {
         this.commentRepository = commentRepository;
         this.urlInfoService = urlInfoService;
         this.userService = userService;
+        this.messagingTemplate = messagingTemplate;
     }
 
     public CommentResponse addComment(CommentRequest commentRequest) {
@@ -48,6 +51,7 @@ public class CommentService {
         // 대댓글인 경우 부모 댓글 설정 및 path 계산
         if (commentRequest.type() == Target.TargetType.COMMENT) {
             Comment parentComment = findCommentById(commentRequest.targetId());
+
             newComment.setParentComment(parentComment);
 
             // 부모 댓글의 path와 현재 댓글의 ID를 사용하여 새로운 path 생성
@@ -60,6 +64,8 @@ public class CommentService {
             // 부모 댓글의 commentCount를 업데이트
             parentComment.updateCommentCount(1);
             commentRepository.save(parentComment); // 변경된 부모 댓글을 저장
+
+            notifyUserAboutComment(parentComment, newComment);
         } else {
             // 루트 댓글인 경우, path는 댓글의 ID
             newComment.setPath(newComment.getTarget().getTargetId() + "/" + newComment.getId()); // 수정됨
@@ -83,6 +89,13 @@ public class CommentService {
         }
 
         return savedComment;
+    }
+
+    @Async
+    public void notifyUserAboutComment(Comment parentComment, Comment newComment) {
+        String message = "새로운 대댓글이 등록되었습니다: " + newComment.getText();
+        messagingTemplate.convertAndSendToUser(
+                String.valueOf(parentComment.getUser().getId()), "/topic/notifications", message);
     }
 
     public Page<CommentResponse> getComments(CommentRequest commentRequest, Pageable pageable) {
