@@ -6,11 +6,11 @@ import java.time.LocalDateTime;
 
 public record CommentResponse(
         Long id,
-        UserDto user,
+        CommentUserDto user,
         String text,
         Long targetId,
         Target.TargetType type,
-        UserDto parentCommentUser,
+        CommentUserDto parentCommentUser,
         String path,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
