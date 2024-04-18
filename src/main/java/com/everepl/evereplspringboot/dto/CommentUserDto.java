@@ -1,6 +1,6 @@
 package com.everepl.evereplspringboot.dto;
 
-public record UserDto(
+public record CommentUserDto(
         Long id,
         String name,
         String imageUrl
