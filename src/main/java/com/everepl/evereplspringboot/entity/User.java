@@ -27,6 +27,8 @@ public class User {
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private Set<UserLike> likes = new HashSet<>();
 
+    private boolean notificationSetting = true;
+
     public Long getId() {
         return id;
     }
@@ -77,5 +79,13 @@ public class User {
 
     public void setLikes(Set<UserLike> likes) {
         this.likes = likes;
+    }
+
+    public boolean isNotificationSetting() {
+        return notificationSetting;
+    }
+
+    public void setNotificationSetting(boolean notificationSetting) {
+        this.notificationSetting = notificationSetting;
     }
 }
