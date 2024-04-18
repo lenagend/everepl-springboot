@@ -2,12 +2,12 @@ package com.everepl.evereplspringboot.service;
 
 import com.everepl.evereplspringboot.dto.CommentRequest;
 import com.everepl.evereplspringboot.dto.CommentResponse;
-import com.everepl.evereplspringboot.dto.UserDto;
+import com.everepl.evereplspringboot.dto.CommentUserDto;
 import com.everepl.evereplspringboot.entity.Comment;
 import com.everepl.evereplspringboot.entity.Target;
-import com.everepl.evereplspringboot.entity.UrlInfo;
 import com.everepl.evereplspringboot.entity.User;
 import com.everepl.evereplspringboot.repository.CommentRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -32,12 +33,14 @@ public class CommentService {
     private final UrlInfoService urlInfoService;
     private final UserService userService;
     private SimpMessagingTemplate messagingTemplate;
+    private ObjectMapper objectMapper;
 
-    public CommentService(CommentRepository commentRepository, UrlInfoService urlInfoService, UserService userService, SimpMessagingTemplate messagingTemplate) {
+    public CommentService(CommentRepository commentRepository, UrlInfoService urlInfoService, UserService userService, SimpMessagingTemplate messagingTemplate, ObjectMapper objectMapper) {
         this.commentRepository = commentRepository;
         this.urlInfoService = urlInfoService;
         this.userService = userService;
         this.messagingTemplate = messagingTemplate;
+        this.objectMapper = objectMapper;
     }
 
     public CommentResponse addComment(CommentRequest commentRequest) {
@@ -91,11 +94,21 @@ public class CommentService {
         return savedComment;
     }
 
+
     @Async
     public void notifyUserAboutComment(Comment parentComment, Comment newComment) {
-        String message = "새로운 대댓글이 등록되었습니다: " + newComment.getText();
-        messagingTemplate.convertAndSendToUser(
-                String.valueOf(parentComment.getUser().getId()), "/topic/notifications", message);
+        String userTopic = "/topic/user." + parentComment.getUser().getId();
+        try {
+            Comment rootComment = findRootComment(newComment);
+            String rootUrl = createRootUrl(rootComment);
+            CommentResponse commentResponse = toDto(newComment, rootUrl);
+            String jsonMessage = objectMapper.writeValueAsString(commentResponse);
+            messagingTemplate.convertAndSend(
+                    userTopic,
+                    jsonMessage);
+        } catch (Exception e) {
+           throw new MessagingException(e.getMessage());
+        }
     }
 
     public Page<CommentResponse> getComments(CommentRequest commentRequest, Pageable pageable) {
@@ -259,15 +272,15 @@ public class CommentService {
         String text = getCommentText(comment);
 
         // User 정보에서 UserDto 생성
-        UserDto user = new UserDto(
+        CommentUserDto user = new CommentUserDto(
                 comment.getUser().getId(),
                 comment.getUser().getDisplayName(),
                 comment.getUser().getImageUrl()
         );
 
         // 부모 댓글의 User 정보를 Optional을 통해 안전하게 처리
-        UserDto parentCommentUser = Optional.ofNullable(comment.getParentComment())
-                .map(parentComment -> new UserDto(
+        CommentUserDto parentCommentUser = Optional.ofNullable(comment.getParentComment())
+                .map(parentComment -> new CommentUserDto(
                         parentComment.getUser().getId(),
                         parentComment.getUser().getDisplayName(),
                         parentComment.getUser().getImageUrl()
