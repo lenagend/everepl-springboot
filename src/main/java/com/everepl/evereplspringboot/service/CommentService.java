@@ -2,7 +2,7 @@ package com.everepl.evereplspringboot.service;
 
 import com.everepl.evereplspringboot.dto.CommentRequest;
 import com.everepl.evereplspringboot.dto.CommentResponse;
-import com.everepl.evereplspringboot.dto.CommentUserDto;
+import com.everepl.evereplspringboot.dto.CommentUserResponse;
 import com.everepl.evereplspringboot.entity.Comment;
 import com.everepl.evereplspringboot.entity.Target;
 import com.everepl.evereplspringboot.entity.User;
@@ -272,15 +272,15 @@ public class CommentService {
         String text = getCommentText(comment);
 
         // User 정보에서 UserDto 생성
-        CommentUserDto user = new CommentUserDto(
+        CommentUserResponse user = new CommentUserResponse(
                 comment.getUser().getId(),
                 comment.getUser().getDisplayName(),
                 comment.getUser().getImageUrl()
         );
 
         // 부모 댓글의 User 정보를 Optional을 통해 안전하게 처리
-        CommentUserDto parentCommentUser = Optional.ofNullable(comment.getParentComment())
-                .map(parentComment -> new CommentUserDto(
+        CommentUserResponse parentCommentUser = Optional.ofNullable(comment.getParentComment())
+                .map(parentComment -> new CommentUserResponse(
                         parentComment.getUser().getId(),
                         parentComment.getUser().getDisplayName(),
                         parentComment.getUser().getImageUrl()
