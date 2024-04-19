@@ -1,5 +1,10 @@
 package com.everepl.evereplspringboot.service;
 
+import com.everepl.evereplspringboot.dto.CommentRequest;
+import com.everepl.evereplspringboot.dto.CommentResponse;
+import com.everepl.evereplspringboot.dto.UserRequest;
+import com.everepl.evereplspringboot.dto.UserResponse;
+import com.everepl.evereplspringboot.entity.Comment;
 import com.everepl.evereplspringboot.entity.User;
 import com.everepl.evereplspringboot.repository.UserRepository;
 import com.everepl.evereplspringboot.security.JwtUtils;
@@ -12,6 +17,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
+
 @Service
 public class UserService {
 
@@ -21,6 +29,11 @@ public class UserService {
     public UserService(UserRepository userRepository, JwtUtils jwtUtils) {
         this.userRepository = userRepository;
         this.jwtUtils = jwtUtils;
+    }
+
+    public UserResponse getUserByUserId(Long userId) {
+        return userRepository.findById(userId).map(this::toDto)
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다. ID: " + userId));
     }
 
     public User getAuthenticatedUser() {
@@ -77,5 +90,26 @@ public class UserService {
                     userRepository.save(newUser);  // 새로운 사용자 저장
                     return newUser;
                 });
+    }
+
+    public UserResponse toDto(User user){
+        return new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getImageUrl(),
+                user.getProvider(),
+                user.isNotificationSetting()
+        );
+    }
+
+    public UserResponse updateUser(UserRequest userRequest) {
+        User currentUser = getAuthenticatedUser();
+
+        Optional.ofNullable(userRequest.name()).ifPresent(currentUser::setName);
+        Optional.ofNullable(userRequest.imageUrl()).ifPresent(currentUser::setImageUrl);
+        Optional.ofNullable(userRequest.notificationSetting()).ifPresent(currentUser::setNotificationSetting);
+
+        userRepository.save(currentUser); // 변경사항 저장
+        return toDto(currentUser);
     }
 }
