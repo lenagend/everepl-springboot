@@ -34,13 +34,15 @@ public class CommentService {
     private final UserService userService;
     private SimpMessagingTemplate messagingTemplate;
     private ObjectMapper objectMapper;
+    private final NotificationService notificationService;
 
-    public CommentService(CommentRepository commentRepository, UrlInfoService urlInfoService, UserService userService, SimpMessagingTemplate messagingTemplate, ObjectMapper objectMapper) {
+    public CommentService(CommentRepository commentRepository, UrlInfoService urlInfoService, UserService userService, SimpMessagingTemplate messagingTemplate, ObjectMapper objectMapper, NotificationService notificationService) {
         this.commentRepository = commentRepository;
         this.urlInfoService = urlInfoService;
         this.userService = userService;
         this.messagingTemplate = messagingTemplate;
         this.objectMapper = objectMapper;
+        this.notificationService = notificationService;
     }
 
     public CommentResponse addComment(CommentRequest commentRequest) {
@@ -109,6 +111,9 @@ public class CommentService {
             messagingTemplate.convertAndSend(
                     userTopic,
                     jsonMessage);
+
+            String notificationMessage = "New reply on your comment: " + parentComment.getText();
+            notificationService.createNotificationForComment(parentComment.getUser(), newComment, notificationMessage);
         } catch (Exception e) {
            throw new MessagingException(e.getMessage());
         }
