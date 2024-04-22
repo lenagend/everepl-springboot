@@ -68,7 +68,10 @@ public class CommentService {
             parentComment.updateCommentCount(1);
             commentRepository.save(parentComment); // 변경된 부모 댓글을 저장
 
-            notifyUserAboutComment(parentComment, newComment);
+            if(parentComment.getUser().isNotificationSetting()){
+                notifyUserAboutComment(parentComment, newComment);
+            }
+
         } else {
             // 루트 댓글인 경우, path는 댓글의 ID
             newComment.setPath(newComment.getTarget().getTargetId() + "/" + newComment.getId()); // 수정됨
