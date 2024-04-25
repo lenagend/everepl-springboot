@@ -7,6 +7,7 @@ import com.everepl.evereplspringboot.entity.Comment;
 import com.everepl.evereplspringboot.entity.Target;
 import com.everepl.evereplspringboot.entity.User;
 import com.everepl.evereplspringboot.repository.CommentRepository;
+import com.everepl.evereplspringboot.utils.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -112,12 +113,14 @@ public class CommentService {
                     userTopic,
                     jsonMessage);
 
-            String notificationMessage = "New reply on your comment: " + parentComment.getText();
-            notificationService.createNotificationForComment(parentComment.getUser(), newComment, notificationMessage);
+            String notificationTitle = StringUtils.truncateText(parentComment.getText(), 10) + "...글에 답글이 달렸습니다";
+            notificationService.createNotificationForComment(commentResponse, notificationTitle);
         } catch (Exception e) {
            throw new MessagingException(e.getMessage());
         }
     }
+
+
 
     public Page<CommentResponse> getComments(CommentRequest commentRequest, Pageable pageable) {
         // 새로운 커스텀 메서드를 호출합니다.
@@ -130,7 +133,7 @@ public class CommentService {
                 .collect(Collectors.toList());
 
         int commentCount = 0;
-        if (commentRequest.type() == Target.TargetType.COMMENT) {
+        if (commentRequest.type() == Target.TargetType.URLINFO) {
             commentCount = urlInfoService.getCommentCountForUrlInfo(commentRequest.targetId());
         }
 

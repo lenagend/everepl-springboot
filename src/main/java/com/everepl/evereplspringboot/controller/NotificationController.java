@@ -1,5 +1,6 @@
 package com.everepl.evereplspringboot.controller;
 
+import com.everepl.evereplspringboot.dto.NotificationResponse;
 import com.everepl.evereplspringboot.entity.Notification;
 import com.everepl.evereplspringboot.service.NotificationService;
 import org.springframework.data.domain.Page;
@@ -21,10 +22,10 @@ public class NotificationController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<Page<Notification>> getNotificationsByUserId(
+    public ResponseEntity<?> getNotificationsByUserId(
             @PathVariable Long userId,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<Notification> notifications = notificationService.findAllNotificationsByUserId(userId, pageable);
+        Page<NotificationResponse> notifications = notificationService.findAllNotificationsByUserId(userId, pageable);
         return ResponseEntity.ok(notifications);
     }
 }

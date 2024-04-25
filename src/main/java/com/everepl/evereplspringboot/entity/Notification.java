@@ -12,16 +12,17 @@ public class Notification {
     @Column(nullable = false)
     private Long userId;
 
+    private String title;
+
     private String message;
 
-    @Embedded
-    private Target target;
+    private String link;
 
     @Enumerated(EnumType.STRING)
-    private NotificationType type;
+    private NotificationType notificationType;
 
     @Enumerated(EnumType.STRING)
-    private NotificationStatus status;
+    private NotificationStatus notificationStatus;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -29,7 +30,7 @@ public class Notification {
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-        this.status = NotificationStatus.UNREAD; // Default to UNREAD when created
+        this.notificationStatus = NotificationStatus.UNREAD; // Default to UNREAD when created
     }
 
     @PreUpdate
@@ -53,6 +54,14 @@ public class Notification {
         this.userId = userId;
     }
 
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
     public String getMessage() {
         return message;
     }
@@ -61,28 +70,28 @@ public class Notification {
         this.message = message;
     }
 
-    public Target getTarget() {
-        return target;
+    public String getLink() {
+        return link;
     }
 
-    public void setTarget(Target target) {
-        this.target = target;
+    public void setLink(String link) {
+        this.link = link;
     }
 
-    public NotificationType getType() {
-        return type;
+    public NotificationType getNotificationType() {
+        return notificationType;
     }
 
-    public void setType(NotificationType type) {
-        this.type = type;
+    public void setNotificationType(NotificationType type) {
+        this.notificationType = type;
     }
 
-    public NotificationStatus getStatus() {
-        return status;
+    public NotificationStatus getNotificationStatus() {
+        return notificationStatus;
     }
 
-    public void setStatus(NotificationStatus status) {
-        this.status = status;
+    public void setNotificationStatus(NotificationStatus status) {
+        this.notificationStatus = status;
     }
 
     public LocalDateTime getCreatedAt() {
