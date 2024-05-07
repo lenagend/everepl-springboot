@@ -23,14 +23,14 @@ public class NotificationService {
 
     public void createNotificationForComment(CommentResponse commentResponse, String title) {
         Notification notification = new Notification();
-        notification.setUserId(commentResponse.user().id());
+        notification.setUserId(commentResponse.getUser().id());
         notification.setTitle(title);
 
         String message = "";
-        message = StringUtils.truncateText(commentResponse.text(), 30) + "...";
+        message = StringUtils.truncateText(commentResponse.getText(), 30) + "...";
 
         notification.setMessage(message);
-        notification.setLink(commentResponse.rootUrl());
+        notification.setLink(commentResponse.getLink());
         notification.setNotificationType(Notification.NotificationType.NEW_REPLY);
         notification.setNotificationStatus(Notification.NotificationStatus.UNREAD);
         notificationRepository.save(notification);

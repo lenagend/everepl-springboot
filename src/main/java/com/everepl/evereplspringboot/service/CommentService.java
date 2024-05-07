@@ -9,12 +9,7 @@ import com.everepl.evereplspringboot.entity.User;
 import com.everepl.evereplspringboot.repository.CommentRepository;
 import com.everepl.evereplspringboot.utils.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.messaging.MessagingException;
@@ -48,57 +43,38 @@ public class CommentService {
 
     public CommentResponse addComment(CommentRequest commentRequest) {
         User currentUser = userService.getAuthenticatedUser();
-
         Comment newComment = toEntity(commentRequest, currentUser);
 
-        // 먼저 댓글 저장하여 ID를 생성
+        // 댓글 저장하여 ID 생성
         newComment = commentRepository.save(newComment);
 
-        // 대댓글인 경우 부모 댓글 설정 및 path 계산
         if (commentRequest.type() == Target.TargetType.COMMENT) {
             Comment parentComment = findCommentById(commentRequest.targetId());
-
             newComment.setParentComment(parentComment);
 
-            // 부모 댓글의 path와 현재 댓글의 ID를 사용하여 새로운 path 생성
-            String newPath = parentComment.getPath() + "/" + newComment.getId();
-            newComment.setPath(newPath);
-
-            //최상위 댓글의 타겟타입 저장
-            newComment.setRootTargetType(parentComment.getRootTargetType());
-
-            // 부모 댓글의 commentCount를 업데이트
+            // 부모 댓글의 commentCount 업데이트
             parentComment.updateCommentCount(1);
-            commentRepository.save(parentComment); // 변경된 부모 댓글을 저장
+            commentRepository.save(parentComment);
 
-            if(parentComment.getUser().isNotificationSetting()){
+            // 부모 댓글 사용자에게 알림
+            if (parentComment.getUser().isNotificationSetting()) {
                 notifyUserAboutComment(parentComment, newComment);
             }
-
-        } else {
-            // 루트 댓글인 경우, path는 댓글의 ID
-            newComment.setPath(newComment.getTarget().getTargetId() + "/" + newComment.getId()); // 수정됨
-
-            //최상위 댓글의 타겟타입 저장
-            newComment.setRootTargetType(commentRequest.type());
         }
-
-        // path가 업데이트된 댓글을 다시 저장
-        newComment = commentRepository.save(newComment);
 
         // 댓글 응답 생성 및 반환
         CommentResponse savedComment = toDto(newComment);
 
-        // 루트댓글의 타켓타입과 타겟ID로 해당 엔티티의 commentCount 업데이트
+        // 루트 댓글의 타겟 타입에 따라 연관된 엔티티의 commentCount 및 인기도 점수 업데이트
         Comment rootComment = findRootComment(newComment);
-
-        if (rootComment.getTarget().getType() == Target.TargetType.URLINFO) { // 수정됨
-            urlInfoService.updateCommentCount(rootComment.getTarget().getTargetId(), 1); // 수정됨
-            urlInfoService.updatePopularityScore(rootComment.getTarget().getTargetId()); // 수정됨
+        if (rootComment.getTarget().getType() == Target.TargetType.URLINFO) {
+            urlInfoService.updateCommentCount(rootComment.getTarget().getTargetId(), 1);
+            urlInfoService.updatePopularityScore(rootComment.getTarget().getTargetId());
         }
 
         return savedComment;
     }
+
 
 
     @Async
@@ -106,8 +82,9 @@ public class CommentService {
         String userTopic = "/topic/user." + parentComment.getUser().getId();
         try {
             Comment rootComment = findRootComment(newComment);
-            String rootUrl = createRootUrl(rootComment);
-            CommentResponse commentResponse = toDto(newComment, rootUrl);
+            CommentResponse commentResponse = toDto(newComment);
+            String link = crateLink(rootComment);
+            commentResponse.setLink(link);
             String jsonMessage = objectMapper.writeValueAsString(commentResponse);
             messagingTemplate.convertAndSend(
                     userTopic,
@@ -122,35 +99,30 @@ public class CommentService {
 
 
 
-    public Page<CommentResponse> getComments(CommentRequest commentRequest, Pageable pageable) {
-        // 새로운 커스텀 메서드를 호출합니다.
-        List<Comment> comments = commentRepository.findCommentsWithRepliesByTarget_TypeAndTarget_TargetId(
-                commentRequest.type(), commentRequest.targetId(), pageable);
+    public List<CommentResponse> getComments(CommentRequest commentRequest) {
+        // 주 댓글만 가져오기
+        List<Comment> comments = commentRepository.findByTarget_TypeAndTarget_TargetId(
+                commentRequest.type(), commentRequest.targetId());
 
-        // 결과를 CommentResponse DTO로 변환합니다.
+        // 결과를 CommentResponse DTO로 변환하면서 초기 대댓글 로드
         List<CommentResponse> commentResponses = comments.stream()
-                .map(this::toDto)
+                .map(comment -> {
+                    CommentResponse response = toDto(comment);  // 댓글을 DTO로 변환
+                    List<Comment> initialReplies = commentRepository.findTop3ByParentCommentIdOrderByCreatedAtAsc(comment.getId());
+                    List<CommentResponse> replyResponses = initialReplies.stream().map(this::toDto).collect(Collectors.toList());
+                    response.setReplies(replyResponses);  // 초기 대댓글 설정
+                    return response;
+                })
                 .collect(Collectors.toList());
 
-        int commentCount = 0;
-        if (commentRequest.type() == Target.TargetType.URLINFO) {
-            commentCount = urlInfoService.getCommentCountForUrlInfo(commentRequest.targetId());
-        }
-
-        // PageImpl를 사용하여 페이징된 결과를 반환합니다.
-        return new PageImpl<>(commentResponses, pageable, commentCount);
+        return commentResponses;
     }
 
-    public Page<CommentResponse> getCommentsByIds(List<Long> ids, Pageable pageable) {
-        Specification<Comment> spec = new Specification<Comment>() {
-            @Override
-            public Predicate toPredicate(Root<Comment> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
-                return root.get("id").in(ids);
-            }
-        };
 
-        return commentRepository.findAll(spec, pageable).map(this::toDto);
+    public List<CommentResponse> getReplies(Long parentCommentId) {
+        return commentRepository.findByParentCommentId(parentCommentId).stream().map(this::toDto).collect(Collectors.toList());
     }
+
 
     private Comment findRootComment(Comment comment) {
         while (comment.getParentComment() != null) {
@@ -242,12 +214,14 @@ public class CommentService {
 
         return comments.map(comment -> {
             Comment rootComment = findRootComment(comment);
-            String rootUrl = createRootUrl(rootComment);
-            return toDto(comment, rootUrl);
+            CommentResponse response = toDto(comment);
+            String link = crateLink(rootComment);
+            response.setLink(link);
+            return response;
         });
     }
 
-    private String createRootUrl(Comment rootComment) {
+    private String crateLink(Comment rootComment) {
         Target target = rootComment.getTarget();
         Target.TargetType targetType = target.getType();
         Long targetId = target.getTargetId();
@@ -268,35 +242,30 @@ public class CommentService {
         return commentRepository.findByUser(currentUser, pageable)
                 .map(comment -> {
                     Comment rootComment = findRootComment(comment);
-                    String rootUrl = createRootUrl(rootComment);
-                    return toDto(comment, rootUrl);
+                    CommentResponse response = toDto(comment);
+                    String link = crateLink(rootComment);
+                    response.setLink(link);
+                    return response;
                 });
 
     }
 
 
     public CommentResponse toDto(Comment comment) {
-        return toDto(comment, null); // rootUrl 없이 메서드 호출
-    }
-
-    public CommentResponse toDto(Comment comment, String rootUrl) {
         String text = getCommentText(comment);
 
-        // User 정보에서 UserDto 생성
         CommentUserResponse user = new CommentUserResponse(
                 comment.getUser().getId(),
                 comment.getUser().getDisplayName(),
                 comment.getUser().getImageUrl()
         );
 
-        // 부모 댓글의 User 정보를 Optional을 통해 안전하게 처리
         CommentUserResponse parentCommentUser = Optional.ofNullable(comment.getParentComment())
                 .map(parentComment -> new CommentUserResponse(
                         parentComment.getUser().getId(),
                         parentComment.getUser().getDisplayName(),
                         parentComment.getUser().getImageUrl()
-                )).orElse(null); // 부모 댓글이 없는 경우 null을 반환
-
+                )).orElse(null);
 
         return new CommentResponse(
                 comment.getId(),
@@ -305,17 +274,16 @@ public class CommentService {
                 comment.getTarget().getTargetId(),
                 comment.getTarget().getType(),
                 parentCommentUser,
-                comment.getPath(),
                 comment.getCreatedAt(),
                 comment.getUpdatedAt(),
                 comment.isDeleted(),
                 comment.isModified(),
                 comment.getCommentCount(),
                 comment.getLikeCount(),
-                comment.getReportCount(),
-                rootUrl // rootUrl 전달 (null일 수 있음)
+                comment.getReportCount()
         );
     }
+
 
 
     private String getCommentText(Comment comment) {

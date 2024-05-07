@@ -22,20 +22,14 @@ public class Comment {
     @Embedded
     private Target target;
 
-    // Materialized Path를 활용할 때는 이 필드를 쿼리 로직에서 사용하지 않음
+    // Materialized
     @OneToMany(mappedBy = "parentComment", fetch = FetchType.LAZY)
     private List<Comment> replies = new ArrayList<>();
 
-    // 부모 댓글의 참조. Materialized Path와 함께 사용될 수 있지만, 필수는 아님
+    // 부모 댓글의 참조.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id") // 부모 댓글의 ID를 참조하는 외래 키
     private Comment parentComment;
-
-    private String path;
-
-    // rootTargetType 필드 추가
-    @Enumerated(EnumType.STRING)
-    private Target.TargetType rootTargetType;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -111,22 +105,6 @@ public class Comment {
 
     public void setParentComment(Comment parentComment) {
         this.parentComment = parentComment;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public Target.TargetType getRootTargetType() {
-        return rootTargetType;
-    }
-
-    public void setRootTargetType(Target.TargetType rootTargetType) {
-        this.rootTargetType = rootTargetType;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
     }
 
     public LocalDateTime getCreatedAt() {

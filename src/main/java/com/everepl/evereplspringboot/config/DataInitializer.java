@@ -88,14 +88,12 @@ public class DataInitializer implements CommandLineRunner {
                 comment.setTarget(target);
                 comment.setUser(savedUser);
                 comment.setText("테스트 댓글입니다: " + j);
-                comment.setRootTargetType(Target.TargetType.URLINFO);
                 comments.add(comment);
             }
             comments = commentRepository.saveAll(comments);
             List<Comment> comments2 = new ArrayList<>();
             for (Comment savedComment : comments){
                 String path = savedComment.getTarget().getTargetId() + "/" + savedComment.getId();
-                savedComment.setPath(path);
                 comments2.add(savedComment);
                 logger.error(path);
             }
