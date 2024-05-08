@@ -3,6 +3,7 @@ package com.everepl.evereplspringboot.service;
 import com.everepl.evereplspringboot.dto.CommentRequest;
 import com.everepl.evereplspringboot.dto.CommentResponse;
 import com.everepl.evereplspringboot.dto.CommentUserResponse;
+import com.everepl.evereplspringboot.dto.NotificationResponse;
 import com.everepl.evereplspringboot.entity.Comment;
 import com.everepl.evereplspringboot.entity.Target;
 import com.everepl.evereplspringboot.entity.User;
@@ -83,15 +84,16 @@ public class CommentService {
         try {
             Comment rootComment = findRootComment(newComment);
             CommentResponse commentResponse = toDto(newComment);
-            String link = crateLink(rootComment);
+            String link = createLink(rootComment);
             commentResponse.setLink(link);
-            String jsonMessage = objectMapper.writeValueAsString(commentResponse);
+
+            String notificationTitle = StringUtils.truncateText(parentComment.getText(), 10) + "...글에 답글이 달렸습니다";
+            NotificationResponse notificationResponse = notificationService.createNotificationForComment(commentResponse, notificationTitle);
+
+            String jsonMessage = objectMapper.writeValueAsString(notificationResponse);
             messagingTemplate.convertAndSend(
                     userTopic,
                     jsonMessage);
-
-            String notificationTitle = StringUtils.truncateText(parentComment.getText(), 10) + "...글에 답글이 달렸습니다";
-            notificationService.createNotificationForComment(commentResponse, notificationTitle);
         } catch (Exception e) {
            throw new MessagingException(e.getMessage());
         }
@@ -215,20 +217,20 @@ public class CommentService {
         return comments.map(comment -> {
             Comment rootComment = findRootComment(comment);
             CommentResponse response = toDto(comment);
-            String link = crateLink(rootComment);
+            String link = createLink(rootComment);
             response.setLink(link);
             return response;
         });
     }
 
-    private String crateLink(Comment rootComment) {
+    private String createLink(Comment rootComment) {
         Target target = rootComment.getTarget();
         Target.TargetType targetType = target.getType();
         Long targetId = target.getTargetId();
         String url = "";
         switch (targetType) {
             case URLINFO:
-                    url = "/view/" + targetId;
+                    url = "/view/" + targetId + "?commentId=" + rootComment.getId();
                 break;
             default:
                url = "/";
@@ -243,7 +245,7 @@ public class CommentService {
                 .map(comment -> {
                     Comment rootComment = findRootComment(comment);
                     CommentResponse response = toDto(comment);
-                    String link = crateLink(rootComment);
+                    String link = createLink(rootComment);
                     response.setLink(link);
                     return response;
                 });

@@ -33,6 +33,7 @@ public class Notification {
         this.notificationStatus = NotificationStatus.UNREAD; // Default to UNREAD when created
     }
 
+
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
