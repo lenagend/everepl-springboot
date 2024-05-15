@@ -6,6 +6,7 @@ import com.everepl.evereplspringboot.dto.UserRequest;
 import com.everepl.evereplspringboot.dto.UserResponse;
 import com.everepl.evereplspringboot.entity.Comment;
 import com.everepl.evereplspringboot.entity.User;
+import com.everepl.evereplspringboot.exceptions.AlreadyExistsException;
 import com.everepl.evereplspringboot.repository.UserRepository;
 import com.everepl.evereplspringboot.security.JwtUtils;
 import com.everepl.evereplspringboot.security.OAuth2Utils;
@@ -95,7 +96,7 @@ public class UserService {
     public UserResponse toDto(User user){
         return new UserResponse(
                 user.getId(),
-                user.getName(),
+                user.getDisplayName(),
                 user.getImageUrl(),
                 user.getProvider(),
                 user.isNotificationSetting()
@@ -105,11 +106,19 @@ public class UserService {
     public UserResponse updateUser(UserRequest userRequest) {
         User currentUser = getAuthenticatedUser();
 
-        Optional.ofNullable(userRequest.name()).ifPresent(currentUser::setName);
-        Optional.ofNullable(userRequest.imageUrl()).ifPresent(currentUser::setImageUrl);
-        Optional.ofNullable(userRequest.notificationSetting()).ifPresent(currentUser::setNotificationSetting);
+        // 닉네임 변경 시 중복 체크
+        Optional.ofNullable(userRequest.getName()).ifPresent(newName -> {
+            if (userRepository.existsByName(newName) && !newName.equals(currentUser.getName())) {
+                throw new AlreadyExistsException("이미 사용 중인 닉네임입니다.");
+            }
+            currentUser.setName(newName);
+        });
+
+        Optional.ofNullable(userRequest.getImageUrl()).ifPresent(currentUser::setImageUrl);
+        Optional.ofNullable(userRequest.getNotificationSetting()).ifPresent(currentUser::setNotificationSetting);
 
         userRepository.save(currentUser); // 변경사항 저장
         return toDto(currentUser);
     }
+
 }

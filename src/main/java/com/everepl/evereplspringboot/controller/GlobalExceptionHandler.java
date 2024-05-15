@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleAlreadyExistsException(AlreadyExistsException ex) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", LocalDateTime.now());
-        body.put("message", "이미 좋아요 했습니다.");
+        body.put("message", ex.getMessage());
 
         return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
