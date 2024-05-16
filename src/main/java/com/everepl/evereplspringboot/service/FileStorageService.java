@@ -34,7 +34,7 @@ public class FileStorageService {
 
             // 파일명에 고유 식별자를 추가하여 중복을 방지
             String originalFilename = file.getOriginalFilename();
-            String filename = UUID.randomUUID().toString() + "-" + (originalFilename != null ? originalFilename : "file");
+            String filename = UUID.randomUUID() + "-" + (originalFilename != null ? originalFilename : "file");
 
             // 최종 저장 경로 계산
             Path destinationFile = typeSpecificLocation.resolve(Paths.get(filename)).normalize().toAbsolutePath();
