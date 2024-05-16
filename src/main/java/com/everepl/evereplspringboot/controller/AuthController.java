@@ -1,15 +1,11 @@
 package com.everepl.evereplspringboot.controller;
 
-import com.everepl.evereplspringboot.dto.CommentRequest;
-import com.everepl.evereplspringboot.dto.CommentResponse;
 import com.everepl.evereplspringboot.dto.UserRequest;
 import com.everepl.evereplspringboot.dto.UserResponse;
-import com.everepl.evereplspringboot.dto.validation.UpdateGroup;
 import com.everepl.evereplspringboot.entity.User;
 import com.everepl.evereplspringboot.service.FileStorageService;
 import com.everepl.evereplspringboot.service.UserService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
