@@ -12,6 +12,7 @@ import com.everepl.evereplspringboot.security.JwtUtils;
 import com.everepl.evereplspringboot.security.OAuth2Utils;
 import io.jsonwebtoken.Claims;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -26,6 +27,9 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final JwtUtils jwtUtils;
+
+    @Value("${default.profile.image.url}")
+    private String defaultProfileImageUrl;
 
     public UserService(UserRepository userRepository, JwtUtils jwtUtils) {
         this.userRepository = userRepository;
@@ -88,6 +92,7 @@ public class UserService {
                     User newUser = new User();
                     newUser.setProvider(provider);
                     newUser.setProviderId(providerId);
+                    newUser.setImageUrl(defaultProfileImageUrl);
                     userRepository.save(newUser);  // 새로운 사용자 저장
                     return newUser;
                 });
