@@ -28,9 +28,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final JwtUtils jwtUtils;
 
-    @Value("${default.profile.image.url}")
-    private String defaultProfileImageUrl;
-
     public UserService(UserRepository userRepository, JwtUtils jwtUtils) {
         this.userRepository = userRepository;
         this.jwtUtils = jwtUtils;
@@ -92,7 +89,6 @@ public class UserService {
                     User newUser = new User();
                     newUser.setProvider(provider);
                     newUser.setProviderId(providerId);
-                    newUser.setImageUrl(defaultProfileImageUrl);
                     userRepository.save(newUser);  // 새로운 사용자 저장
                     return newUser;
                 });
