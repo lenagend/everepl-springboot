@@ -46,7 +46,7 @@ public class CommentService {
         User currentUser = userService.getAuthenticatedUser();
 
         if (currentUser.getCommentBanUntil() != null && currentUser.getCommentBanUntil().isAfter(LocalDateTime.now())) {
-            throw new IllegalArgumentException("You are banned from commenting until " + currentUser.getCommentBanUntil());
+            throw new IllegalArgumentException("신고누적으로 다음 기간까지 댓글을 작성하실 수 없습니다. " + currentUser.getCommentBanUntil());
         }
 
         Comment newComment = toEntity(commentRequest, currentUser);
