@@ -44,6 +44,11 @@ public class CommentService {
 
     public CommentResponse addComment(CommentRequest commentRequest) {
         User currentUser = userService.getAuthenticatedUser();
+
+        if (currentUser.getCommentBanUntil() != null && currentUser.getCommentBanUntil().isAfter(LocalDateTime.now())) {
+            throw new IllegalArgumentException("You are banned from commenting until " + currentUser.getCommentBanUntil());
+        }
+
         Comment newComment = toEntity(commentRequest, currentUser);
 
         // 댓글 저장하여 ID 생성
@@ -58,8 +63,10 @@ public class CommentService {
             commentRepository.save(parentComment);
 
             // 부모 댓글 사용자에게 알림
-            if (parentComment.getUser().isNotificationSetting()) {
-                notifyUserAboutComment(parentComment, newComment);
+            if (!parentComment.getUser().equals(newComment.getUser())) {
+                if (parentComment.getUser().isNotificationSetting()) {
+                    notifyUserAboutComment(parentComment, newComment);
+                }
             }
         }
 
