@@ -12,7 +12,7 @@ public class Target {
     private TargetType type;
 
     public enum TargetType {
-        URLINFO, COMMENT, BOARD // 추후 다른 타입 추가 가능
+        URLINFO, COMMENT, USER // 추후 다른 타입 추가 가능
     }
 
     // 기본 생성자

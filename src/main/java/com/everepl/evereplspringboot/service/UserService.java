@@ -1,12 +1,12 @@
 package com.everepl.evereplspringboot.service;
 
-import com.everepl.evereplspringboot.dto.CommentRequest;
-import com.everepl.evereplspringboot.dto.CommentResponse;
-import com.everepl.evereplspringboot.dto.UserRequest;
-import com.everepl.evereplspringboot.dto.UserResponse;
+import com.everepl.evereplspringboot.dto.*;
 import com.everepl.evereplspringboot.entity.Comment;
+import com.everepl.evereplspringboot.entity.Report;
 import com.everepl.evereplspringboot.entity.User;
 import com.everepl.evereplspringboot.exceptions.AlreadyExistsException;
+import com.everepl.evereplspringboot.exceptions.UserActionRestrictionException;
+import com.everepl.evereplspringboot.repository.ReportRepository;
 import com.everepl.evereplspringboot.repository.UserRepository;
 import com.everepl.evereplspringboot.security.JwtUtils;
 import com.everepl.evereplspringboot.security.OAuth2Utils;
@@ -26,11 +26,21 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+
     private final JwtUtils jwtUtils;
 
     public UserService(UserRepository userRepository, JwtUtils jwtUtils) {
         this.userRepository = userRepository;
         this.jwtUtils = jwtUtils;
+    }
+
+    public User findUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다. ID: " + userId));
+    }
+
+    public void saveUser(User user) {
+        userRepository.save(user);
     }
 
     public UserResponse getUserByUserId(Long userId) {
@@ -42,9 +52,7 @@ public class UserService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Long userId = Long.parseLong(authentication.getName()); // 인증된 사용자의 고유 ID 추출
 
-        // userRepository를 사용하여 User 객체 조회
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다. ID: " + userId));
+        return findUserById(userId);
     }
 
     public User findUserByOAuthToken(OAuth2AuthenticationToken oauthToken) {
@@ -115,11 +123,18 @@ public class UserService {
             currentUser.setName(newName);
         });
 
+        // 프로필 사진 변경 금지 기간 검사
+        if (userRequest.getImageUrl() != null && currentUser.getProfilePictureBanUntil() != null
+                && LocalDateTime.now().isBefore(currentUser.getProfilePictureBanUntil())) {
+            throw new UserActionRestrictionException("신고누적으로 다음 기간까지 프로필을 변경하실 수 없습니다. " + currentUser.getProfilePictureBanUntil());
+        }
+
         Optional.ofNullable(userRequest.getImageUrl()).ifPresent(currentUser::setImageUrl);
         Optional.ofNullable(userRequest.getNotificationSetting()).ifPresent(currentUser::setNotificationSetting);
 
         userRepository.save(currentUser); // 변경사항 저장
         return toDto(currentUser);
     }
+
 
 }

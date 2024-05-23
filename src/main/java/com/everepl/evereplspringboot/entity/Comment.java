@@ -179,7 +179,7 @@ public class Comment {
         this.commentCount += increment;
     }
 
-    public void incrementReportCount(){
-        this.reportCount += 1;
+    public void updateReportCount(int increment) {
+        this.reportCount += increment;
     }
 }

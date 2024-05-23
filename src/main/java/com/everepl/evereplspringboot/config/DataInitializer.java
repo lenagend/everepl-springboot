@@ -7,11 +7,9 @@ import com.everepl.evereplspringboot.entity.User;
 import com.everepl.evereplspringboot.repository.CommentRepository;
 import com.everepl.evereplspringboot.repository.UrlInfoRepository;
 import com.everepl.evereplspringboot.repository.UserRepository;
-import org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -19,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-@Component
 public class DataInitializer implements CommandLineRunner {
     private final Logger logger = LoggerFactory.getLogger("LoggerController 의 로그");
 

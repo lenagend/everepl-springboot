@@ -2,6 +2,7 @@ package com.everepl.evereplspringboot.controller;
 
 import com.everepl.evereplspringboot.exceptions.AlreadyExistsException;
 import com.everepl.evereplspringboot.exceptions.InvalidUrlException;
+import com.everepl.evereplspringboot.exceptions.UserActionRestrictionException;
 import com.everepl.evereplspringboot.service.EmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,15 @@ public class GlobalExceptionHandler {
     }
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(UserActionRestrictionException.class)
+    public ResponseEntity<Object> handleUserActionRestrictionException(UserActionRestrictionException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", ex.getMessage());
+
+        return new ResponseEntity<>(body, HttpStatus.FORBIDDEN);
+    }
 
     @ExceptionHandler(AlreadyExistsException.class)
     public ResponseEntity<Object> handleAlreadyExistsException(AlreadyExistsException ex) {

@@ -2,7 +2,9 @@ package com.everepl.evereplspringboot.entity;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 @Entity
@@ -29,6 +31,10 @@ public class User {
     private Set<UserLike> likes = new HashSet<>();
 
     private boolean notificationSetting = true;
+
+    private LocalDateTime commentBanUntil; // 댓글 작성 정지 종료 시간
+
+    private LocalDateTime profilePictureBanUntil; // 프로필 사진 변경 정지 종료 시간
 
     public Long getId() {
         return id;
@@ -88,5 +94,40 @@ public class User {
 
     public void setNotificationSetting(boolean notificationSetting) {
         this.notificationSetting = notificationSetting;
+    }
+
+    public LocalDateTime getCommentBanUntil() {
+        if (commentBanUntil != null) {
+            return commentBanUntil.withSecond(0).withNano(0);
+        }
+        return null;
+    }
+
+    public void setCommentBanUntil(LocalDateTime commentBanUntil) {
+        this.commentBanUntil = commentBanUntil;
+    }
+
+    public LocalDateTime getProfilePictureBanUntil() {
+        if (profilePictureBanUntil != null) {
+            return profilePictureBanUntil.withSecond(0).withNano(0);
+        }
+        return null;
+    }
+
+    public void setProfilePictureBanUntil(LocalDateTime profilePictureBanUntil) {
+        this.profilePictureBanUntil = profilePictureBanUntil;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equals(id, user.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }
