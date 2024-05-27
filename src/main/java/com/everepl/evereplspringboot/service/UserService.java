@@ -25,6 +25,12 @@ import java.util.Optional;
 @Service
 public class UserService {
 
+    @Value("${admin.provider}")
+    private String adminProvider;
+
+    @Value("${admin.providerId}")
+    private String adminProviderId;
+
     private final UserRepository userRepository;
 
     private final JwtUtils jwtUtils;
@@ -97,6 +103,14 @@ public class UserService {
                     User newUser = new User();
                     newUser.setProvider(provider);
                     newUser.setProviderId(providerId);
+
+                    // 관리자 여부 확인
+                    if (provider.equals(adminProvider) && providerId.equals(adminProviderId)) {
+                        newUser.setRole(User.Role.ROLE_ADMIN);
+                    } else {
+                        newUser.setRole(User.Role.ROLE_USER);
+                    }
+
                     userRepository.save(newUser);  // 새로운 사용자 저장
                     return newUser;
                 });
@@ -108,6 +122,7 @@ public class UserService {
                 user.getDisplayName(),
                 user.getImageUrl(),
                 user.getProvider(),
+                user.getRole(),
                 user.isNotificationSetting()
         );
     }

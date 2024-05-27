@@ -44,8 +44,10 @@ public class ReportService {
 
     public void handleReport(ReportRequest reportRequest) {
         User reporter = userService.getAuthenticatedUser();
+        boolean isAdmin = reporter.getRole() == User.Role.ROLE_ADMIN;
+
         // 중복 신고 방지 로직 추가
-        if (reportRepository.existsByReporterAndTargetAndReason(reporter, reportRequest.target(), reportRequest.reason())) {
+        if (!isAdmin && reportRepository.existsByReporterAndTargetAndReason(reporter, reportRequest.target(), reportRequest.reason())) {
             throw new UserActionRestrictionException("이미 같은 이유로 신고하셨습니다.");
         }
 
@@ -59,25 +61,25 @@ public class ReportService {
 
         switch (reportRequest.target().getType()) {
             case URLINFO:
-                handleUrlReport(reportRequest.target().getTargetId());
+                handleUrlReport(reportRequest.target().getTargetId(), isAdmin);
                 break;
             case COMMENT:
-                handleCommentReport(reportRequest.target().getTargetId());
+                handleCommentReport(reportRequest.target().getTargetId(), isAdmin);
                 break;
             case USER:
-                handleUserReport(reportRequest.target().getTargetId(), reportRequest.reason());
+                handleUserReport(reportRequest.target().getTargetId(), reportRequest.reason(), isAdmin);
                 break;
             default:
                 throw new IllegalArgumentException("잘못된 대상 유형입니다: " + reportRequest.target().getType());
         }
     }
 
-    private void handleUserReport(Long userId, Report.ReportReason reason) {
+    private void handleUserReport(Long userId, Report.ReportReason reason, boolean isAdmin) {
         User reportedUser = userService.findUserById(userId);
 
         if (reason == Report.ReportReason.INAPPROPRIATE_PROFILE_PICTURE) {
             long reportCount = reportRepository.countByTargetAndReason(new Target(userId, Target.TargetType.USER), reason);
-            if (reportCount >= profilePictureViolationThreshold) {
+            if (isAdmin || reportCount >= profilePictureViolationThreshold) {
                 reportedUser.setImageUrl(null);
                 reportedUser.setProfilePictureBanUntil(LocalDateTime.now().plusDays(profilePictureBanDurationDays));
                 userService.saveUser(reportedUser);
@@ -85,13 +87,13 @@ public class ReportService {
         }
     }
 
-    private void handleCommentReport(Long commentId) {
+    private void handleCommentReport(Long commentId, boolean isAdmin) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new NoSuchElementException("댓글을 찾을 수 없습니다. ID: " + commentId));
         comment.updateReportCount(1);
 
         long reportCount = reportRepository.countByTargetAndReason(new Target(commentId, Target.TargetType.COMMENT), Report.ReportReason.INAPPROPRIATE_COMMENT);
-        if (reportCount >= commentViolationThreshold) {
+        if (isAdmin || reportCount >= commentViolationThreshold) {
             User commentAuthor = comment.getUser();
             commentAuthor.setCommentBanUntil(LocalDateTime.now().plusDays(commentBanDurationDays));
             userService.saveUser(commentAuthor);
@@ -100,7 +102,7 @@ public class ReportService {
         commentRepository.save(comment);
     }
 
-    private void handleUrlReport(Long urlInfoId) {
+    private void handleUrlReport(Long urlInfoId, boolean isAdmin) {
         UrlInfo urlInfo = urlInfoRepository.findById(urlInfoId)
                 .orElseThrow(() -> new NoSuchElementException("URL 정보를 찾을 수 없습니다. ID: " + urlInfoId));
 
@@ -109,7 +111,12 @@ public class ReportService {
         if (reportCount >= urlViolationThreshold) {
             urlInfo.setDescription(String.format("주의. 신고가 %d번 이상 된 URL입니다.", reportCount));
         }
-
+        if (isAdmin) {
+            urlInfo.setTitle("비정상 웹페이지 입니다.");
+            urlInfo.setFaviconSrc(null);
+            urlInfo.setDescription("접근 주의");
+        }
         urlInfoRepository.save(urlInfo);
     }
+
 }

@@ -27,6 +27,9 @@ public class User {
     // 로그인에 사용한 서비스 구분 (예: google, kakao, naver)
     private String provider;
 
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private Set<UserLike> likes = new HashSet<>();
 
@@ -74,6 +77,14 @@ public class User {
 
     public void setProvider(String provider) {
         this.provider = provider;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 
     public String getDisplayName() {
@@ -130,4 +141,10 @@ public class User {
     public int hashCode() {
         return Objects.hash(id);
     }
+
+    public enum Role {
+        ROLE_USER,
+        ROLE_ADMIN
+    }
 }
+
