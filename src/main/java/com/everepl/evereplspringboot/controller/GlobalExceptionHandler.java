@@ -106,7 +106,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleIllegalStateException(IllegalStateException ex) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", LocalDateTime.now());
-        body.put("message", "권한이 없습니다.");
+        body.put("message", ex.getMessage());
 
         return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
     }
