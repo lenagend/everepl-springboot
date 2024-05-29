@@ -2,12 +2,13 @@
 <configuration>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/everepl.log</file>
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- 매일 자정에 새 파일로 롤오버. 파일명에 날짜를 포함 -->
-            <fileNamePattern>/var/logs/everepl-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>logs/everepl-%d{yyyy-MM-dd}.log</fileNamePattern>
             <!-- 최대 30일 동안 로그 파일 보관 -->
             <maxHistory>30</maxHistory>
         </rollingPolicy>
@@ -23,6 +24,5 @@
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
     </root>
-
 
 </configuration>

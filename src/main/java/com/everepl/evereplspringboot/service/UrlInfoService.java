@@ -18,6 +18,7 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -37,6 +38,10 @@ import java.util.Optional;
 @Service
 public class UrlInfoService {
     private static final Logger log = LoggerFactory.getLogger(UrlInfoService.class);
+
+    @Value("${selenium.domains}")
+    private String seleniumDomainsEnv;
+
     private final UrlInfoRepository urlInfoRepository;
 
     public UrlInfoService(UrlInfoRepository urlInfoRepository) {
@@ -134,8 +139,8 @@ public class UrlInfoService {
 
             String url = urlInfo.getUrl();
 
-            // 셀레니움으로 처리할 도메인 리스트 정의
-            List<String> seleniumDomains = Arrays.asList("instagram.com", "twitter.com");
+            // 환경변수에서 셀레니움 도메인 리스트 불러오기
+            List<String> seleniumDomains = Arrays.asList(seleniumDomainsEnv.split(","));
 
             // URL에서 도메인 추출
             String domain = extractDomain(url);
@@ -145,19 +150,27 @@ public class UrlInfoService {
                 // 셀레니움 WebDriver 설정
                 driver = new ChromeDriver();
                 driver.get(url);
-                driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5)); // 5초 대기
+                driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(3));
 
                 // 제목 추출
                 String title = driver.getTitle();
+                if (title == null || title.isEmpty()) {
+                    throw new InvalidUrlException("웹 페이지 정보를 추출하는 중 오류 발생: " + urlInfo.getUrl());
+                }
                 urlInfo.setTitle(title);
 
                 // 파비콘 추출
-                WebElement faviconLink = driver.findElement(By.cssSelector("link[rel~='icon']"));
-                String faviconUrl = "";
-                if (faviconLink != null) {
-                    faviconUrl = faviconLink.getAttribute("href");
+                try {
+                    WebElement faviconLink = driver.findElement(By.cssSelector("link[rel~='icon'], link[rel='shortcut icon'], link[rel='apple-touch-icon']"));
+                    String faviconUrl = "";
+                    if (faviconLink != null) {
+                        faviconUrl = faviconLink.getAttribute("href");
+                    }
+                    urlInfo.setFaviconSrc(faviconUrl);
+                } catch (Exception e) {
+                    // 파비콘 추출 실패 시 예외 무시
+                    urlInfo.setFaviconSrc("");
                 }
-                urlInfo.setFaviconSrc(faviconUrl);
             } else {
                 // 기존 Jsoup 처리
                 Document doc = Jsoup.connect(url)
@@ -165,36 +178,42 @@ public class UrlInfoService {
                         .timeout(5000)
                         .get();
                 String title = doc.title();
+                if (title == null || title.isEmpty()) {
+                    throw new InvalidUrlException("웹 페이지 정보를 추출하는 중 오류 발생: " + urlInfo.getUrl());
+                }
+                urlInfo.setTitle(title);
 
                 Element faviconLink = doc.select("link[rel~=.*icon.*]").first();
                 String faviconUrl = "";
                 if (faviconLink != null) {
                     faviconUrl = faviconLink.attr("abs:href");
                 }
-                urlInfo.setTitle(title);
                 urlInfo.setFaviconSrc(faviconUrl);
             }
         } catch (SocketTimeoutException e) {
             throw new RuntimeException(new InvalidUrlException("웹 페이지 정보를 가져오는 데 시간이 초과되었습니다: " + urlInfo.getUrl()));
+        } catch (InvalidUrlException e) {
+            throw new RuntimeException(e);
         } catch (Exception e) {
             throw new RuntimeException(new InvalidUrlException("웹 페이지 정보를 추출하는 중 오류 발생: " + urlInfo.getUrl()));
-        }  finally {
+        } finally {
             if (driver != null) {
                 driver.quit(); // 셀레니움 드라이버 종료
             }
         }
     }
 
+
     private String extractDomain(String url) throws URISyntaxException {
         URI uri = new URI(url);
         String domain = uri.getHost();
         if (domain == null) return null;
 
-        // 'www' 및 서브도메인 제거
-        int index = domain.indexOf('.');
-        if (index != -1 && index < domain.lastIndexOf('.')) {
-            domain = domain.substring(index + 1);
+        // 'www' 제거 (접두사로 있을 경우)
+        if (domain.startsWith("www.")) {
+            domain = domain.substring(4);
         }
+
         return domain;
     }
 
