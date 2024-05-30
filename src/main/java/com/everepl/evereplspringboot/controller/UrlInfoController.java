@@ -1,21 +1,16 @@
 package com.everepl.evereplspringboot.controller;
 
-import com.everepl.evereplspringboot.entity.UrlInfo;
-import com.everepl.evereplspringboot.exceptions.InvalidUrlException;
 import com.everepl.evereplspringboot.service.UrlInfoService;
 import com.everepl.evereplspringboot.dto.UrlInfoRequest;
 import com.everepl.evereplspringboot.dto.UrlInfoResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/url")
@@ -36,7 +31,7 @@ public class UrlInfoController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getUrlInfo(@PathVariable Long id) {
-            UrlInfoResponse urlInfoResponse = urlInfoService.getUrlInfoById(id);
+            UrlInfoResponse urlInfoResponse = urlInfoService.getUrlInfoResponseById(id);
             return ResponseEntity.ok(urlInfoResponse);
     }
 

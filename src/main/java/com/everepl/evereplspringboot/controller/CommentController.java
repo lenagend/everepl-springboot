@@ -2,6 +2,7 @@ package com.everepl.evereplspringboot.controller;
 
 import com.everepl.evereplspringboot.dto.CommentRequest;
 import com.everepl.evereplspringboot.dto.CommentResponse;
+import com.everepl.evereplspringboot.dto.CommentWithSourceResponse;
 import com.everepl.evereplspringboot.dto.validation.CreateGroup;
 import com.everepl.evereplspringboot.dto.validation.ReadGroup;
 import com.everepl.evereplspringboot.dto.validation.UpdateGroup;
@@ -58,7 +59,7 @@ public class CommentController {
 
     @GetMapping("/my")
     public ResponseEntity<?> getMyComments(Pageable pageable) {
-        Page<CommentResponse> comments = commentService.getMyComments(pageable);
+        Page<CommentWithSourceResponse> comments = commentService.getMyCommentsWithSources(pageable);
         return ResponseEntity.ok(comments);
     }
 

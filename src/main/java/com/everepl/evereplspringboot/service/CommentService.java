@@ -1,9 +1,6 @@
 package com.everepl.evereplspringboot.service;
 
-import com.everepl.evereplspringboot.dto.CommentRequest;
-import com.everepl.evereplspringboot.dto.CommentResponse;
-import com.everepl.evereplspringboot.dto.CommentUserResponse;
-import com.everepl.evereplspringboot.dto.NotificationResponse;
+import com.everepl.evereplspringboot.dto.*;
 import com.everepl.evereplspringboot.entity.Comment;
 import com.everepl.evereplspringboot.entity.Target;
 import com.everepl.evereplspringboot.entity.User;
@@ -91,7 +88,7 @@ public class CommentService {
         try {
             Comment rootComment = findRootComment(newComment);
             CommentResponse commentResponse = toDto(newComment);
-            String link = createLink(rootComment);
+            String link = createSourceLink(rootComment);
             commentResponse.setLink(link);
 
             String notificationTitle = StringUtils.truncateText(parentComment.getText(), 10) + "...글에 답글이 달렸습니다";
@@ -216,47 +213,60 @@ public class CommentService {
                 (comment.getReportCount() * reportPenalty);
     }
 
-    public Page<CommentResponse> getCommentsByIdsWithRootUrl(List<Long> ids, Pageable pageable) {
+
+    public Page<CommentWithSourceResponse> getMyCommentsWithSources(Pageable pageable) {
+        User currentUser = userService.getAuthenticatedUser();
+
+        return commentRepository.findByUser(currentUser, pageable)
+                .map(this::toDtoWithSource);
+    }
+
+    public Page<CommentWithSourceResponse> getCommentsByIdsWithSource(List<Long> ids, Pageable pageable) {
         Specification<Comment> spec = (root, query, criteriaBuilder) -> root.get("id").in(ids);
 
         Page<Comment> comments = commentRepository.findAll(spec, pageable);
 
-        return comments.map(comment -> {
-            Comment rootComment = findRootComment(comment);
-            CommentResponse response = toDto(comment);
-            String link = createLink(rootComment);
-            response.setLink(link);
-            return response;
-        });
+        return comments.map(this::toDtoWithSource);
     }
 
-    private String createLink(Comment rootComment) {
+
+    private String createSourceLink(Comment rootComment) {
         Target target = rootComment.getTarget();
         Target.TargetType targetType = target.getType();
         Long targetId = target.getTargetId();
         String url = "";
         switch (targetType) {
             case URLINFO:
-                    url = "/view/" + targetId + "?commentId=" + rootComment.getId();
+                url = "/view/" + targetId + "?commentId=" + rootComment.getId();
                 break;
             default:
-               url = "/";
+                url = "/";
         }
         return url;
     }
 
-    public Page<CommentResponse> getMyComments(Pageable pageable) {
-        User currentUser = userService.getAuthenticatedUser();
+    private String createSourceTitle(Comment rootComment) {
+        Target target = rootComment.getTarget();
+        Target.TargetType targetType = target.getType();
+        Long targetId = target.getTargetId();
+        String title = "";
+        switch (targetType) {
+            case URLINFO:
+                title = urlInfoService.getUrlInfoById(targetId).getTitle();
+                break;
+            default:
+                title = "";
+        }
+        return title;
+    }
 
-        return commentRepository.findByUser(currentUser, pageable)
-                .map(comment -> {
-                    Comment rootComment = findRootComment(comment);
-                    CommentResponse response = toDto(comment);
-                    String link = createLink(rootComment);
-                    response.setLink(link);
-                    return response;
-                });
+    public CommentWithSourceResponse toDtoWithSource(Comment comment) {
+        CommentResponse commentResponse = toDto(comment);
+        Comment rootComment = findRootComment(comment);
+        String sourceTitle = createSourceTitle(rootComment);  // Target에 제목 필드가 있다고 가정
+        String sourceLink = createSourceLink(rootComment);
 
+        return new CommentWithSourceResponse(commentResponse, sourceTitle, sourceLink);
     }
 
 
@@ -292,7 +302,6 @@ public class CommentService {
                 comment.getReportCount()
         );
     }
-
 
 
     private String getCommentText(Comment comment) {

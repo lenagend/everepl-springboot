@@ -88,7 +88,7 @@ public class UserLikeService {
                 pageResponse = urlInfoService.getUrlInfoByIds(targetIds, pageable);
                 break;
             case COMMENT:
-                pageResponse = commentService.getCommentsByIdsWithRootUrl(targetIds, pageable);
+                pageResponse = commentService.getCommentsByIdsWithSource(targetIds, pageable);
                 break;
             // 기타 타입에 대한 처리...
             default:

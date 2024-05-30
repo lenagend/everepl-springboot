@@ -5,6 +5,7 @@ import com.everepl.evereplspringboot.exceptions.InvalidUrlException;
 import com.everepl.evereplspringboot.entity.UrlInfo;
 import com.everepl.evereplspringboot.repository.UrlInfoRepository;
 import com.everepl.evereplspringboot.specification.UrlInfoSpecification;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
@@ -217,8 +218,14 @@ public class UrlInfoService {
         return domain;
     }
 
+    public UrlInfo getUrlInfoById(Long id) {
+        Optional<UrlInfo> urlInfo = urlInfoRepository.findById(id);
+        return urlInfo.orElseThrow(() -> new NoSuchElementException("UrlInfo를 찾을수 없습니다: " + id));
+    }
 
-    public UrlInfoResponse getUrlInfoById(Long id) {
+
+
+    public UrlInfoResponse getUrlInfoResponseById(Long id) {
         Optional<UrlInfo> urlInfo = urlInfoRepository.findById(id);
         if (urlInfo.isPresent()) {
             UrlInfo foundUrlInfo = urlInfo.get();
