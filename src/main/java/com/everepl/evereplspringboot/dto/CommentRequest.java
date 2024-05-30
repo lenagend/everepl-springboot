@@ -15,6 +15,6 @@ public record CommentRequest(
     @NotNull(groups = {CreateGroup.class, UpdateGroup.class, ReadGroup.class})
     Long targetId,
 
-    @NotNull(groups = {CreateGroup.class, UpdateGroup.class, ReadGroup.class})
+    @NotNull(groups = {CreateGroup.class,  ReadGroup.class})
     Target.TargetType type
 ){}
