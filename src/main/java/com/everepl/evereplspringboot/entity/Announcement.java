@@ -11,6 +11,8 @@ public class Announcement {
     private Long id;
 
     private String title;
+
+    @Column(length = 20000) // 데이터베이스 컬럼 길이도 설정
     private String content;
 
     @ManyToOne
