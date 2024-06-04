@@ -9,4 +9,5 @@ import java.util.Optional;
 
 public interface UrlInfoRepository extends JpaRepository<UrlInfo, Long>, JpaSpecificationExecutor<UrlInfo> {
     Optional<UrlInfo> findByUrl(String url);
+    List<UrlInfo> findByDomain(String domain);
 }

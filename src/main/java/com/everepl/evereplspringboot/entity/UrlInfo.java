@@ -13,6 +13,7 @@ public class UrlInfo {
 
     @Column(unique = true)
     private String url;
+    private String domain;
     private String title;
     private String faviconSrc;
     private String description;
@@ -65,6 +66,14 @@ public class UrlInfo {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
     }
 
     public String getTitle() {

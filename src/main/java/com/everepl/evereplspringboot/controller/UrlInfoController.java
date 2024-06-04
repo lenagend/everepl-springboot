@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URISyntaxException;
 import java.util.List;
 
 @RestController
@@ -24,7 +25,7 @@ public class UrlInfoController {
     }
 
     @PostMapping
-    public ResponseEntity<?> processUrl(@Validated @RequestBody UrlInfoRequest urlInfoRequest) {
+    public ResponseEntity<?> processUrl(@Validated @RequestBody UrlInfoRequest urlInfoRequest) throws URISyntaxException {
             UrlInfoResponse urlInfoResponse = urlInfoService.processUrl(urlInfoRequest.url());
             return ResponseEntity.ok(urlInfoResponse);
     }

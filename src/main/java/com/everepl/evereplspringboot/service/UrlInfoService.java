@@ -3,6 +3,7 @@ package com.everepl.evereplspringboot.service;
 import com.everepl.evereplspringboot.dto.UrlInfoResponse;
 import com.everepl.evereplspringboot.exceptions.InvalidUrlException;
 import com.everepl.evereplspringboot.entity.UrlInfo;
+import com.everepl.evereplspringboot.repository.BlockedDomainRepository;
 import com.everepl.evereplspringboot.repository.UrlInfoRepository;
 import com.everepl.evereplspringboot.specification.UrlInfoSpecification;
 import jakarta.persistence.EntityNotFoundException;
@@ -45,14 +46,24 @@ public class UrlInfoService {
 
     private final UrlInfoRepository urlInfoRepository;
 
-    public UrlInfoService(UrlInfoRepository urlInfoRepository) {
+    private final BlockedDomainRepository blockedDomainRepository; // 신고된 도메인을 관리하는 저장소
+
+
+    public UrlInfoService(UrlInfoRepository urlInfoRepository, BlockedDomainRepository blockedDomainRepository) {
         this.urlInfoRepository = urlInfoRepository;
+        this.blockedDomainRepository = blockedDomainRepository;
     }
 
-
-    public UrlInfoResponse processUrl(String url) {
+    public UrlInfoResponse processUrl(String url) throws URISyntaxException {
         // URL 검증
         validateUrl(url);
+
+        String domain = extractDomain(url);
+
+
+        if (blockedDomainRepository.existsByDomain(domain)) {
+            throw new RuntimeException("이 사이트는 운영자에 의해 이용정지되었습니다.");
+        }
 
         // 데이터베이스에서 URL 조회
         Optional<UrlInfo> existingUrlInfo = urlInfoRepository.findByUrl(url);
@@ -63,8 +74,8 @@ public class UrlInfoService {
         } else {
             // URL 정보가 없으면 새로 수집, 저장 후 반환
             UrlInfo urlInfo = new UrlInfo();
-
             urlInfo.setUrl(url);
+            urlInfo.setDomain(domain);
 
             fetchWebPageInfo(urlInfo);
 
