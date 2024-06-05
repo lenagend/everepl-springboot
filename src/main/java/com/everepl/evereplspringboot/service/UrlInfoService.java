@@ -266,11 +266,9 @@ public class UrlInfoService {
         return urlInfos.map(this::toDto);
     }
 
-    //댓글수 조회
-    public int getCommentCountForUrlInfo(Long urlInfoId) {
-        UrlInfo urlInfo = urlInfoRepository.findById(urlInfoId)
-                .orElseThrow(() -> new NoSuchElementException("URL 정보가 존재하지 않습니다: " + urlInfoId));
-        return urlInfo.getCommentCount();
+    public Page<UrlInfoResponse> searchByTitle(String title, Pageable pageable) {
+        Page<UrlInfo> urlInfos = urlInfoRepository.findByTitleContainingIgnoreCase(title, pageable);
+        return urlInfos.map(this::toDto);
     }
 
     //댓글수 증감

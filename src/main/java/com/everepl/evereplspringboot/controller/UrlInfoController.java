@@ -5,6 +5,7 @@ import com.everepl.evereplspringboot.dto.UrlInfoRequest;
 import com.everepl.evereplspringboot.dto.UrlInfoResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -44,4 +45,12 @@ public class UrlInfoController {
             return ResponseEntity.ok(urlInfos);
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<?> searchByTitle(
+            @RequestParam String title,
+            @RequestParam int page,
+            @RequestParam int size) {
+        Page<UrlInfoResponse> results = urlInfoService.searchByTitle(title, PageRequest.of(page, size));
+        return ResponseEntity.ok(results);
+    }
 }
