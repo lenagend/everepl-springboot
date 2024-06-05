@@ -102,7 +102,7 @@ public class ReportService {
             commentAuthor.setCommentBanUntil(LocalDateTime.now().plusDays(commentBanDurationDays));
             userService.saveUser(commentAuthor);
         }
-
+        comment.setDeleted(true);
         commentRepository.save(comment);
     }
 
