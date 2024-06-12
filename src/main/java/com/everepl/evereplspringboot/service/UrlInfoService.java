@@ -3,6 +3,7 @@ package com.everepl.evereplspringboot.service;
 import com.everepl.evereplspringboot.dto.UrlInfoResponse;
 import com.everepl.evereplspringboot.exceptions.InvalidUrlException;
 import com.everepl.evereplspringboot.entity.UrlInfo;
+import com.everepl.evereplspringboot.repository.BlockedDomainRepository;
 import com.everepl.evereplspringboot.repository.UrlInfoRepository;
 import com.everepl.evereplspringboot.specification.UrlInfoSpecification;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -44,14 +45,24 @@ public class UrlInfoService {
 
     private final UrlInfoRepository urlInfoRepository;
 
-    public UrlInfoService(UrlInfoRepository urlInfoRepository) {
+    private final BlockedDomainRepository blockedDomainRepository; // 신고된 도메인을 관리하는 저장소
+
+
+    public UrlInfoService(UrlInfoRepository urlInfoRepository, BlockedDomainRepository blockedDomainRepository) {
         this.urlInfoRepository = urlInfoRepository;
+        this.blockedDomainRepository = blockedDomainRepository;
     }
 
-
-    public UrlInfoResponse processUrl(String url) {
+    public UrlInfoResponse processUrl(String url) throws URISyntaxException {
         // URL 검증
         validateUrl(url);
+
+        String domain = extractDomain(url);
+
+
+        if (blockedDomainRepository.existsByDomain(domain)) {
+            throw new RuntimeException("이 사이트는 운영자에 의해 이용정지되었습니다.");
+        }
 
         // 데이터베이스에서 URL 조회
         Optional<UrlInfo> existingUrlInfo = urlInfoRepository.findByUrl(url);
@@ -62,8 +73,8 @@ public class UrlInfoService {
         } else {
             // URL 정보가 없으면 새로 수집, 저장 후 반환
             UrlInfo urlInfo = new UrlInfo();
-
             urlInfo.setUrl(url);
+            urlInfo.setDomain(domain);
 
             fetchWebPageInfo(urlInfo);
 
@@ -217,8 +228,14 @@ public class UrlInfoService {
         return domain;
     }
 
+    public UrlInfo getUrlInfoById(Long id) {
+        Optional<UrlInfo> urlInfo = urlInfoRepository.findById(id);
+        return urlInfo.orElseThrow(() -> new NoSuchElementException("UrlInfo를 찾을수 없습니다: " + id));
+    }
 
-    public UrlInfoResponse getUrlInfoById(Long id) {
+
+
+    public UrlInfoResponse getUrlInfoResponseById(Long id) {
         Optional<UrlInfo> urlInfo = urlInfoRepository.findById(id);
         if (urlInfo.isPresent()) {
             UrlInfo foundUrlInfo = urlInfo.get();
@@ -248,11 +265,9 @@ public class UrlInfoService {
         return urlInfos.map(this::toDto);
     }
 
-    //댓글수 조회
-    public int getCommentCountForUrlInfo(Long urlInfoId) {
-        UrlInfo urlInfo = urlInfoRepository.findById(urlInfoId)
-                .orElseThrow(() -> new NoSuchElementException("URL 정보가 존재하지 않습니다: " + urlInfoId));
-        return urlInfo.getCommentCount();
+    public Page<UrlInfoResponse> searchByTitle(String title, Pageable pageable) {
+        Page<UrlInfo> urlInfos = urlInfoRepository.findByTitleContainingIgnoreCase(title, pageable);
+        return urlInfos.map(this::toDto);
     }
 
     //댓글수 증감
@@ -275,18 +290,18 @@ public class UrlInfoService {
     // 인기도 점수 계산 및 저장 (UrlInfo 객체가 이미 조회된 상태)
     @Async
     public void updatePopularityScore(UrlInfo urlInfo) {
-            double score = calculatePopularityScore(urlInfo);
-            urlInfo.setPopularityScore(score);
-            urlInfoRepository.save(urlInfo);
+        double score = calculatePopularityScore(urlInfo);
+        urlInfo.setPopularityScore(score);
+        urlInfoRepository.save(urlInfo);
     }
 
     @Async
     public void updatePopularityScore(Long urlInfoId) {
-            UrlInfo urlInfo = urlInfoRepository.findById(urlInfoId)
-                    .orElseThrow(() -> new NoSuchElementException("URL 정보가 존재하지 않습니다: " + urlInfoId));
-            double score = calculatePopularityScore(urlInfo);
-            urlInfo.setPopularityScore(score);
-            urlInfoRepository.save(urlInfo);
+        UrlInfo urlInfo = urlInfoRepository.findById(urlInfoId)
+                .orElseThrow(() -> new NoSuchElementException("URL 정보가 존재하지 않습니다: " + urlInfoId));
+        double score = calculatePopularityScore(urlInfo);
+        urlInfo.setPopularityScore(score);
+        urlInfoRepository.save(urlInfo);
     }
 
     private double calculatePopularityScore(UrlInfo urlInfo) {
