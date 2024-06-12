@@ -53,16 +53,20 @@ public class UrlInfoService {
         this.blockedDomainRepository = blockedDomainRepository;
     }
 
-    public UrlInfoResponse processUrl(String url) throws URISyntaxException {
+    // 기존 processUrl 메서드
+    public UrlInfoResponse processUrl(String url) {
+        // URL 검증 및 처리
+        return processUrl(url, null);
+    }
+
+    // 새로운 processTrendUrl 메서드
+    public UrlInfoResponse processTrendUrl(String url, String customTitle) {
+        return processUrl(url, customTitle);
+    }
+
+    public UrlInfoResponse processUrl(String url, String customTitle) {
         // URL 검증
         validateUrl(url);
-
-        String domain = extractDomain(url);
-
-
-        if (blockedDomainRepository.existsByDomain(domain)) {
-            throw new RuntimeException("이 사이트는 운영자에 의해 이용정지되었습니다.");
-        }
 
         // 데이터베이스에서 URL 조회
         Optional<UrlInfo> existingUrlInfo = urlInfoRepository.findByUrl(url);
@@ -73,10 +77,16 @@ public class UrlInfoService {
         } else {
             // URL 정보가 없으면 새로 수집, 저장 후 반환
             UrlInfo urlInfo = new UrlInfo();
-            urlInfo.setUrl(url);
-            urlInfo.setDomain(domain);
 
+            urlInfo.setUrl(url);
+
+            // 웹 페이지 정보를 수집
             fetchWebPageInfo(urlInfo);
+
+            // customTitle이 있을 경우 제목을 설정
+            if (customTitle != null && !customTitle.isEmpty()) {
+                urlInfo.setTitle(customTitle);
+            }
 
             urlInfoRepository.save(urlInfo);
 
