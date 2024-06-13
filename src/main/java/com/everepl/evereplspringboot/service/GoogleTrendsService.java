@@ -3,6 +3,7 @@ package com.everepl.evereplspringboot.service;
 import org.json.JSONArray;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -23,15 +24,7 @@ public class GoogleTrendsService {
         this.urlInfoService = urlInfoService;
     }
 
-    @EventListener(ApplicationReadyEvent.class) // 서버 부팅 후 한 번만 실행
-    public void fetchTrendingUrlsOnStartup() {
-        try {
-            fetchAndProcessTrendingUrls();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
+    @Scheduled(cron = "0 0 3 * * *") // 매일 03:00에 실행
     public void fetchAndProcessTrendingUrls() {
         List<String> trendingKeywords = fetchTrendingKeywords();
         List<String> searchUrls = convertKeywordsToGoogleSearchUrls(trendingKeywords);
@@ -45,12 +38,10 @@ public class GoogleTrendsService {
             String keyword = trendingKeywords.get(i);
 
             // 각 URL에 대해 사용자 정의 제목 설정
-            String title = currentDate + " 구글 일간 검색어 [" + keyword + "]";
+            String title = currentDate + " 구글 인기 검색어 [" + keyword + "]";
             urlInfoService.processTrendUrl(url, title);
         }
     }
-
-
 
     private List<String> fetchTrendingKeywords() {
         List<String> trendingKeywords = new ArrayList<>();
@@ -66,9 +57,6 @@ public class GoogleTrendsService {
                 output.append(line);
             }
 
-            // 디버깅 로그: 실제 출력된 내용 확인
-            System.out.println("Python script output: " + output.toString());
-
             // JSON 배열로 파싱
             JSONArray jsonArray = new JSONArray(output.toString());
             for (int i = 0; i < jsonArray.length(); i++) {
@@ -79,9 +67,6 @@ public class GoogleTrendsService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        // 추출된 키워드 리스트 로그로 출력
-        System.out.println("Trending Keywords: " + trendingKeywords);
 
         return trendingKeywords;
     }
@@ -100,9 +85,6 @@ public class GoogleTrendsService {
                 e.printStackTrace();
             }
         }
-
-        // 변환된 검색 URL 리스트 로그로 출력
-        System.out.println("Google Search URLs: " + searchUrls);
 
         return searchUrls;
     }
