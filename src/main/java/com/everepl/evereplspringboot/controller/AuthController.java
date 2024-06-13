@@ -3,7 +3,7 @@ package com.everepl.evereplspringboot.controller;
 import com.everepl.evereplspringboot.dto.UserRequest;
 import com.everepl.evereplspringboot.dto.UserResponse;
 import com.everepl.evereplspringboot.entity.User;
-import com.everepl.evereplspringboot.service.FileStorageService;
+import com.everepl.evereplspringboot.service.S3StorageService;
 import com.everepl.evereplspringboot.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,11 +15,11 @@ import org.springframework.web.multipart.MultipartFile;
 public class AuthController {
 
     private final UserService userService;
-    private final FileStorageService fileStorageService;
+    private final S3StorageService s3StorageService;
 
-    public AuthController(UserService userService, FileStorageService fileStorageService) {
+    public AuthController(UserService userService, S3StorageService s3StorageService) {
         this.userService = userService;
-        this.fileStorageService = fileStorageService;
+        this.s3StorageService = s3StorageService;
     }
 
     @GetMapping("/verify-token")
@@ -46,7 +46,7 @@ public class AuthController {
 
         // 이미지 파일이 있을 경우 처리
         if (profileImage != null && !profileImage.isEmpty()) {
-            String imagePath = fileStorageService.store(profileImage, "image");
+            String imagePath = s3StorageService.store(profileImage, "image");
             userRequest.setImageUrl(imagePath); // userRequest에 이미지 URL 추가
         }
 
