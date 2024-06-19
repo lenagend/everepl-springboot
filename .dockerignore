@@ -1,0 +1,30 @@
+# 대상 폴더 (빌드 아티팩트)
+target/
+
+# IntelliJ IDEA 프로젝트 파일
+*.iml
+.idea/
+
+# 로그 파일
+*.log
+
+# Git 관련 파일
+.git/
+.gitignore
+
+# 환경 변수 파일
+.env
+.env.local
+.env.*.local
+
+# Docker 관련 파일
+.dockerignore
+Dockerfile
+
+# IDE 설정 파일
+.vscode/
+.idea/
+.DS_Store
+
+# 운영 체제에서 생성하는 파일
+Thumbs.db
