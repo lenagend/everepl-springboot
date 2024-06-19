@@ -49,11 +49,9 @@
             <version>2.2.224</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/com.mysql/mysql-connector-j -->
         <dependency>
-            <groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
-            <version>8.4.0</version>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
         </dependency>
 
 
@@ -174,12 +172,25 @@
             <version>2.26.0</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>3.2.1</version>
+                <configuration>
+                    <mainClass>com.everepl.evereplspringboot.EvereplSpringbootApplication</mainClass>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
+
 
 
 </project>
