@@ -12,11 +12,11 @@ public class Announcement {
 
     private String title;
 
-    @Column(length = 20000) // 데이터베이스 컬럼 길이도 설정
+    @Column(length = 5000) // 데이터베이스 컬럼 길이도 설정
     private String content;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     private LocalDateTime createdAt;

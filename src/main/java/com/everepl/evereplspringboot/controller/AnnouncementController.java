@@ -19,8 +19,9 @@ public class AnnouncementController {
     }
 
     @GetMapping
-    public List<AnnouncementResponse> getAllAnnouncements() {
-        return announcementService.getAllAnnouncements();
+    public ResponseEntity<List<AnnouncementResponse>> getAllAnnouncements() {
+        List<AnnouncementResponse> announcementResponseList = announcementService.getAllAnnouncements();
+        return ResponseEntity.ok(announcementResponseList);
     }
 
     @PostMapping
