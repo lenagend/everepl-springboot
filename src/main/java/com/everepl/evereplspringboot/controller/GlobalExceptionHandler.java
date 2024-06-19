@@ -15,7 +15,10 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -30,6 +33,17 @@ public class GlobalExceptionHandler {
     }
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Map<String, Object> handleNoResourceFoundException(NoResourceFoundException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.NOT_FOUND.value());
+        response.put("error", "Not Found");
+        response.put("message", ex.getMessage());
+        return response;
+    }
 
     @ExceptionHandler(UserActionRestrictionException.class)
     public ResponseEntity<Object> handleUserActionRestrictionException(UserActionRestrictionException ex) {
@@ -160,14 +174,20 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleAllUncaughtException(Exception ex, WebRequest request) {
         String errorId = UUID.randomUUID().toString();
-        log.error("Error ID: {}, Request URL: {}, An unexpected error occurred - Exception: {}, Message: {}", errorId, request.getDescription(false), ex.getClass().getName(), ex.getMessage());
+        String requestDetails = request.getDescription(false);
+
+        log.error("Error ID: {}, Request URL: {}, An unexpected error occurred - Exception: {}, Message: {}, Stack Trace: {}",
+                errorId, requestDetails, ex.getClass().getName(), ex.getMessage());
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", LocalDateTime.now());
         body.put("errorId", errorId);
         body.put("message", "알 수 없는 오류가 발생했습니다. 지원팀에 문의해주세요.");
+        body.put("details", requestDetails);  // 요청의 세부 정보
+        body.put("exception", ex.getClass().getName());  // 예외의 유형
 
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
 
 }
