@@ -91,8 +91,7 @@ public class CommentService {
             String link = createSourceLink(rootComment);
             commentResponse.setLink(link);
 
-            String notificationTitle = StringUtils.truncateText(parentComment.getText(), 10) + "...글에 답글이 달렸습니다";
-            NotificationResponse notificationResponse = notificationService.createNotificationForComment(commentResponse, notificationTitle);
+            NotificationResponse notificationResponse = notificationService.createNotificationForComment(commentResponse);
 
             String jsonMessage = objectMapper.writeValueAsString(notificationResponse);
             messagingTemplate.convertAndSend(

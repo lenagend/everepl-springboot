@@ -26,13 +26,12 @@ public class NotificationService {
         return notificationRepository.findByUserId(userId, pageable).map(this::toDto);
     }
 
-    public NotificationResponse createNotificationForComment(CommentResponse commentResponse, String title) {
+    public NotificationResponse createNotificationForComment(CommentResponse commentResponse) {
         Notification notification = new Notification();
-        notification.setUserId(commentResponse.getUser().id());
+        notification.setUserId(commentResponse.getParentCommentUser().id());
+        String title =  commentResponse.getUser().name() + "님으로부터의 대댓글 알림";
         notification.setTitle(title);
-
-        String message = "";
-        message = StringUtils.truncateText(commentResponse.getText(), 30) + "...";
+        String message = commentResponse.getText();
 
         notification.setMessage(message);
         notification.setLink(commentResponse.getLink());
