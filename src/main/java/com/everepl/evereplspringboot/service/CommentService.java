@@ -7,6 +7,11 @@ import com.everepl.evereplspringboot.entity.User;
 import com.everepl.evereplspringboot.repository.CommentRepository;
 import com.everepl.evereplspringboot.utils.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.parser.Tag;
+import org.jsoup.select.Elements;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -80,14 +85,20 @@ public class CommentService {
         return savedComment;
     }
 
-
-
     @Async
     public void notifyUserAboutComment(Comment parentComment, Comment newComment) {
         String userTopic = "/topic/user." + parentComment.getUser().getId();
         try {
             Comment rootComment = findRootComment(newComment);
+
+            // 원본 newComment의 텍스트를 가져와 변환
+            String htmlContent = newComment.getText();
+            String processedText = extractTextWithEmojiReplacement(htmlContent);
+
+            // 새로운 CommentResponse 객체 생성
             CommentResponse commentResponse = toDto(newComment);
+            commentResponse.setText(processedText);  // 변환된 텍스트로 설정
+
             String link = createSourceLink(rootComment);
             commentResponse.setLink(link);
 
@@ -98,10 +109,20 @@ public class CommentService {
                     userTopic,
                     jsonMessage);
         } catch (Exception e) {
-           throw new MessagingException(e.getMessage());
+            throw new MessagingException(e.getMessage());
         }
     }
 
+    private String extractTextWithEmojiReplacement(String html) {
+        Document document = Jsoup.parse(html);
+        Elements images = document.select("img");
+        for (Element img : images) {
+            if (img.attr("alt").equals("이모티콘")) {
+                img.replaceWith(new Element(Tag.valueOf("span"), "").text("[이모티콘]"));
+            }
+        }
+        return document.text();
+    }
 
 
     public List<CommentResponse> getComments(CommentRequest commentRequest) {

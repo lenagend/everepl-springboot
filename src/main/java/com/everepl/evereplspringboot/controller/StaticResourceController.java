@@ -10,4 +10,8 @@ public class StaticResourceController {
     public ResponseEntity<Void> handleFavicon() {
         return ResponseEntity.noContent().build();
     }
+    @GetMapping("/")
+    public ResponseEntity<Void> handleRoot() {
+        return ResponseEntity.noContent().build();
+    }
 }
