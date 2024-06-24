@@ -6,6 +6,7 @@ import com.everepl.evereplspringboot.dto.UserRequest;
 import com.everepl.evereplspringboot.dto.UserResponse;
 import com.everepl.evereplspringboot.service.AnnouncementService;
 import com.everepl.evereplspringboot.service.S3StorageService;
+import com.everepl.evereplspringboot.service.UrlInfoService;
 import com.everepl.evereplspringboot.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,6 +15,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.net.URISyntaxException;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -25,10 +28,13 @@ public class AdminController {
 
     private final S3StorageService s3StorageService;
 
-    public AdminController(AnnouncementService announcementService, UserService userService, S3StorageService s3StorageService) {
+    private final UrlInfoService urlInfoService;
+
+    public AdminController(AnnouncementService announcementService, UserService userService, S3StorageService s3StorageService, UrlInfoService urlInfoService) {
         this.announcementService = announcementService;
         this.userService = userService;
         this.s3StorageService = s3StorageService;
+        this.urlInfoService = urlInfoService;
     }
 
     @PostMapping("/announcements")
@@ -100,6 +106,18 @@ public class AdminController {
             @RequestParam int days
     ) {
         userService.suspendComments(id, days);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/block-domain")
+    public ResponseEntity<Void> blockDomain(@RequestParam String url) throws URISyntaxException {
+        urlInfoService.blockDomain(url);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/block-url")
+    public ResponseEntity<Void> blockUrl(@RequestParam String url) {
+        urlInfoService.blockUrl(url);
         return ResponseEntity.noContent().build();
     }
 }

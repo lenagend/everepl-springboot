@@ -7,6 +7,7 @@ import com.everepl.evereplspringboot.repository.BlockedDomainRepository;
 import com.everepl.evereplspringboot.repository.CommentRepository;
 import com.everepl.evereplspringboot.repository.ReportRepository;
 import com.everepl.evereplspringboot.repository.UrlInfoRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -20,8 +21,7 @@ public class ReportService {
     private final ReportRepository reportRepository;
     private final UserService userService;
     private final CommentRepository commentRepository;
-    private final UrlInfoRepository urlInfoRepository;
-    private final BlockedDomainRepository blockedDomainRepository;
+    private final UrlInfoService urlInfoService;
 
     @Value("${report.profile-picture-violation-threshold}")
     private int profilePictureViolationThreshold;
@@ -38,12 +38,11 @@ public class ReportService {
     @Value("${report.comment-ban-duration}")
     private int commentBanDurationDays;
 
-    public ReportService(ReportRepository reportRepository, UserService userService, CommentRepository commentRepository, UrlInfoRepository urlInfoRepository, BlockedDomainRepository blockedDomainRepository) {
+    public ReportService(ReportRepository reportRepository, UserService userService, CommentRepository commentRepository, UrlInfoService urlInfoService) {
         this.reportRepository = reportRepository;
         this.userService = userService;
         this.commentRepository = commentRepository;
-        this.urlInfoRepository = urlInfoRepository;
-        this.blockedDomainRepository = blockedDomainRepository;
+        this.urlInfoService = urlInfoService;
     }
 
     public void handleReport(ReportRequest reportRequest) {
@@ -105,28 +104,20 @@ public class ReportService {
         commentRepository.save(comment);
     }
 
+    @Transactional
     private void handleUrlReport(Long urlInfoId) {
-        boolean isAdmin = false;
-        UrlInfo urlInfo = urlInfoRepository.findById(urlInfoId)
-                .orElseThrow(() -> new NoSuchElementException("URL 정보를 찾을 수 없습니다. ID: " + urlInfoId));
+        UrlInfo urlInfo = urlInfoService.getUrlInfoById(urlInfoId);
 
         urlInfo.incrementReportCount();
         int reportCount = urlInfo.getReportCount();
+
         if (reportCount >= urlViolationThreshold) {
+            // 신고 수가 임계값에 도달하면 URL을 차단
+            urlInfoService.blockUrl(urlInfo.getUrl());
+        } else {
+            // 신고 수가 임계값에 도달하지 않았을 경우 설명 업데이트
             urlInfo.setDescription(String.format("주의. 신고가 %d번 이상 된 URL입니다.", reportCount));
-            urlInfoRepository.save(urlInfo);
-        }
-        if (isAdmin) {
-            String domain = urlInfo.getDomain();
-
-            // 신고된 도메인을 블록 목록에 추가
-            BlockedDomain blockedDomain = new BlockedDomain();
-            blockedDomain.setDomain(domain);
-            blockedDomainRepository.save(blockedDomain);
-
-            // 해당 도메인의 기존 UrlInfo 삭제
-            List<UrlInfo> urlInfosToDelete = urlInfoRepository.findByDomain(domain);
-            urlInfoRepository.deleteAll(urlInfosToDelete);
+            urlInfoService.saveUrlInfo(urlInfo);
         }
     }
 

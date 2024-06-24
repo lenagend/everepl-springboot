@@ -29,6 +29,9 @@ public class UrlInfo {
 
     private Double popularityScore = 0.0;
 
+    private Boolean isBlocked = false;
+
+
     public UrlInfo() {
     }
 
@@ -178,5 +181,13 @@ public class UrlInfo {
 
     public void incrementReportCount(){
         this.reportCount += 1;
+    }
+
+    public Boolean getBlocked() {
+        return isBlocked;
+    }
+
+    public void setBlocked(Boolean blocked) {
+        isBlocked = blocked;
     }
 }

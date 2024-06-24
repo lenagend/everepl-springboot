@@ -1,6 +1,7 @@
 package com.everepl.evereplspringboot.service;
 
 import com.everepl.evereplspringboot.dto.UrlInfoResponse;
+import com.everepl.evereplspringboot.entity.BlockedDomain;
 import com.everepl.evereplspringboot.exceptions.InvalidUrlException;
 import com.everepl.evereplspringboot.entity.UrlInfo;
 import com.everepl.evereplspringboot.repository.BlockedDomainRepository;
@@ -10,6 +11,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.transaction.Transactional;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -51,6 +53,10 @@ public class UrlInfoService {
     public UrlInfoService(UrlInfoRepository urlInfoRepository, BlockedDomainRepository blockedDomainRepository) {
         this.urlInfoRepository = urlInfoRepository;
         this.blockedDomainRepository = blockedDomainRepository;
+    }
+
+    public void saveUrlInfo(UrlInfo urlInfo){
+        urlInfoRepository.save(urlInfo);
     }
 
     // 기존 processUrl 메서드
@@ -165,6 +171,8 @@ public class UrlInfoService {
 
             // URL에서 도메인 추출
             String domain = extractDomain(url);
+
+            urlInfo.setDomain(domain);
 
             // 셀레니움을 사용해야 하는 경우
             if (seleniumDomains.contains(domain)) {
@@ -328,13 +336,40 @@ public class UrlInfoService {
                 (urlInfo.getReportCount() * reportPenalty);
     }
 
+    @Transactional
+    public void blockDomain(String url) throws URISyntaxException {
+        // URL에서 도메인 추출
+        String domain = extractDomain(url);
+
+        // 도메인을 차단 목록에 추가
+        BlockedDomain blockedDomain = new BlockedDomain();
+        blockedDomain.setDomain(domain);
+        blockedDomainRepository.save(blockedDomain);
+
+        // 해당 도메인의 기존 UrlInfo 삭제
+        List<UrlInfo> urlInfosToDelete = urlInfoRepository.findByDomain(domain);
+        urlInfoRepository.deleteAll(urlInfosToDelete);
+    }
+
+    @Transactional
+    public void blockUrl(String url) {
+        UrlInfo urlInfo = urlInfoRepository.findByUrl(url)
+                .orElseThrow(() -> new NoSuchElementException("URL 정보를 찾을 수 없습니다: " + url));
+
+        urlInfo.setBlocked(true); // URL 차단 설정
+        urlInfoRepository.save(urlInfo);
+    }
+
     public UrlInfoResponse toDto(UrlInfo urlInfo) {
+        String url = urlInfo.getBlocked() ? "https://everepl.com" : urlInfo.getUrl(); // 차단된 URL은 "-" 반환
+        String description = urlInfo.getBlocked() ? "정지된 url입니다" : urlInfo.getDescription();
+
         return new UrlInfoResponse(
                 urlInfo.getId(),
-                urlInfo.getUrl(),
+                url,
                 urlInfo.getTitle(),
                 urlInfo.getFaviconSrc(),
-                urlInfo.getDescription(),
+                description,
                 urlInfo.getCreatedAt(),
                 urlInfo.getUpdatedAt(),
                 urlInfo.getUpdatedDate(),
@@ -344,5 +379,4 @@ public class UrlInfoService {
                 urlInfo.getReportCount()
         );
     }
-
 }
