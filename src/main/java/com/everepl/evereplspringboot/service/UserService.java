@@ -13,6 +13,8 @@ import com.everepl.evereplspringboot.security.OAuth2Utils;
 import io.jsonwebtoken.Claims;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -41,6 +43,10 @@ public class UserService {
     public UserService(UserRepository userRepository, JwtUtils jwtUtils) {
         this.userRepository = userRepository;
         this.jwtUtils = jwtUtils;
+    }
+
+    public Page<UserResponse> getAllUsers(Pageable pageable) {
+        return userRepository.findAll(pageable).map(this::toDto);
     }
 
     public User findUserById(Long userId) {
@@ -127,11 +133,6 @@ public class UserService {
         return jwtUtils.generateTokenWithUserInfo(user);
     }
 
-    public String getUserIdFromToken(String token) {
-        Claims claims = jwtUtils.extractAllClaims(token); // 토큰에서 클레임 추출
-        return claims.getSubject(); // 클레임에서 사용자 ID 추출
-    }
-
     @Transactional
     public User loadOrCreateUser(String provider, String providerId) {
         return userRepository.findByProviderAndProviderId(provider, providerId)
@@ -197,5 +198,37 @@ public class UserService {
         return toDto(currentUser);
     }
 
+    @Transactional
+    public UserResponse updateUserByAdmin(Long id, UserRequest userRequest) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다. ID: " + id));
 
+        if (userRequest.getName() != null) {
+            user.setName(userRequest.getName());
+        }
+        if (userRequest.getImageUrl() != null) {
+            user.setImageUrl(userRequest.getImageUrl());
+        }
+        // 추가적인 필드 업데이트가 필요한 경우 여기에 추가
+
+        userRepository.save(user);
+        return toDto(user);
+    }
+
+    public void deleteUser(Long userId) {
+        userRepository.deleteById(userId);
+    }
+
+    public void suspendProfilePicture(Long userId, int days) {
+        User user = findUserById(userId);
+        user.setImageUrl(null);
+        user.setProfilePictureBanUntil(LocalDateTime.now().plusDays(days));
+        userRepository.save(user);
+    }
+
+    public void suspendComments(Long userId, int days) {
+        User user = findUserById(userId);
+        user.setCommentBanUntil(LocalDateTime.now().plusDays(days));
+        userRepository.save(user);
+    }
 }

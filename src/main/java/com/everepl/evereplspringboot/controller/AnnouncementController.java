@@ -24,21 +24,4 @@ public class AnnouncementController {
         return ResponseEntity.ok(announcementResponseList);
     }
 
-    @PostMapping
-    public ResponseEntity<AnnouncementResponse> createAnnouncement(@RequestBody AnnouncementRequest request) {
-        AnnouncementResponse response = announcementService.createAnnouncement(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<AnnouncementResponse> updateAnnouncement(@PathVariable Long id, @RequestBody AnnouncementRequest request) {
-        AnnouncementResponse response = announcementService.updateAnnouncement(id, request);
-        return ResponseEntity.ok(response);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAnnouncement(@PathVariable Long id) {
-        announcementService.deleteAnnouncement(id);
-        return ResponseEntity.noContent().build();
-    }
 }
