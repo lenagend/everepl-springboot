@@ -1,12 +1,13 @@
 package com.everepl.evereplspringboot.dto;
 
-import com.everepl.evereplspringboot.entity.User;
+
+import java.util.Set;
 
 public record UserResponse(
         Long id,
         String name,
         String imageUrl,
         String provider,
-        User.Role role,
+        Set<String> roles,
         Boolean notificationSetting
 ) {}

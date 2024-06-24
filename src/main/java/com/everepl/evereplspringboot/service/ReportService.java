@@ -48,7 +48,7 @@ public class ReportService {
 
     public void handleReport(ReportRequest reportRequest) {
         User reporter = userService.getAuthenticatedUser();
-        boolean isAdmin = reporter.getRole() == User.Role.ROLE_ADMIN;
+        boolean isAdmin = reporter.getRoles().contains(User.Role.ROLE_ADMIN);
 
         // 중복 신고 방지 로직 추가
         if (!isAdmin && reportRepository.existsByReporterAndTargetAndReason(reporter, reportRequest.target(), reportRequest.reason())) {

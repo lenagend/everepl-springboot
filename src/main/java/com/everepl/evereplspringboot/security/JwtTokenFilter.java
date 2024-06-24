@@ -10,12 +10,19 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtTokenFilter extends OncePerRequestFilter {
@@ -29,26 +36,38 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        try {
+        SecurityContext context = SecurityContextHolder.getContext();
+
+        if (context.getAuthentication() == null) {
             String token = request.getHeader("Authorization");
             if (token != null && token.startsWith("Bearer ")) {
-                token = token.substring(7);
+                try {
+                    // 토큰 유효성 검사 및 클레임 추출
+                    Claims claims = userService.validateTokenAndExtractClaims(token);
 
-                String userId = userService.getUserIdFromToken(token);
+                    // 클레임에서 사용자 ID 추출
+                    String userId = claims.getSubject();
 
-                // 단순히 사용자 ID를 기반으로 Authentication 객체 생성
-                Authentication authentication = new UsernamePasswordAuthenticationToken(
-                        userId, // 주체(principal)로 사용자 ID 사용
-                        null,   // 자격증명(credentials)은 필요 없으므로 null
-                        Collections.emptyList() // 권한(authorities)은 비워 둠
-                );
+                    // 사용자 정보 조회
+                    User tokenUser = userService.findUserById(userId);
 
-                // SecurityContext에 Authentication 객체 저장
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                    // 사용자 엔티티에서 권한 정보 추출
+                    List<GrantedAuthority> authorities = tokenUser.getRoles().stream()
+                            .map(User.Role::name)
+                            .map(SimpleGrantedAuthority::new)
+                            .collect(Collectors.toList());
+
+                    // 새로운 Authentication 객체 생성
+                    Authentication authentication = new UsernamePasswordAuthenticationToken(
+                            userId, null, authorities);
+
+                    // SecurityContext에 Authentication 객체 저장
+                    context.setAuthentication(authentication);
+                } catch (Exception e) {
+                    // 토큰 검증 실패 처리
+                    SecurityContextHolder.clearContext();
+                }
             }
-        } catch (Exception e) {
-            // 토큰 검증 실패 처리
-            SecurityContextHolder.clearContext(); // Context 초기화
         }
 
         filterChain.doFilter(request, response);

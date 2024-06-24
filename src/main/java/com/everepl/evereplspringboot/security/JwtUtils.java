@@ -25,16 +25,17 @@ public class JwtUtils {
 
     // JWT 생성
     public String generateTokenWithUserInfo(User user) {
-
         return Jwts.builder()
                 .subject(String.valueOf(user.getId()))
-                .claim("name", user.getName()) // 사용자 이름 클레임 추가
+                .claim("name", user.getName())
                 .claim("imageUrl", user.getImageUrl())
+                .claim("roles", user.getRoles()) // 사용자 권한 정보를 클레임에 추가
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + 3600000))
                 .signWith(this.getSigningKey())
                 .compact();
     }
+
 
     public Claims extractAllClaims(String token){
         return Jwts.parser()
@@ -42,14 +43,6 @@ public class JwtUtils {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-    }
-
-    public static String extractToken(String bearerToken) {
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        } else {
-            throw new IllegalArgumentException("토큰이 유효하지 않습니다.");
-        }
     }
 
 }
