@@ -166,59 +166,29 @@ public class UrlInfoService {
 
             String url = urlInfo.getUrl();
 
-            // 환경변수에서 셀레니움 도메인 리스트 불러오기
-            List<String> seleniumDomains = Arrays.asList(seleniumDomainsEnv.split(","));
-
             // URL에서 도메인 추출
             String domain = extractDomain(url);
 
             urlInfo.setDomain(domain);
 
-            // 셀레니움을 사용해야 하는 경우
-            if (seleniumDomains.contains(domain)) {
-                // 셀레니움 WebDriver 설정
-                driver = new ChromeDriver();
-                driver.get(url);
-                driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(3));
-
-                // 제목 추출
-                String title = driver.getTitle();
-                if (title == null || title.isEmpty()) {
-                    throw new InvalidUrlException("웹 페이지 정보를 추출하는 중 오류 발생: " + urlInfo.getUrl());
-                }
-                urlInfo.setTitle(title);
-
-                // 파비콘 추출
-                try {
-                    WebElement faviconLink = driver.findElement(By.cssSelector("link[rel~='icon'], link[rel='shortcut icon'], link[rel='apple-touch-icon']"));
-                    String faviconUrl = "";
-                    if (faviconLink != null) {
-                        faviconUrl = faviconLink.getAttribute("href");
-                    }
-                    urlInfo.setFaviconSrc(faviconUrl);
-                } catch (Exception e) {
-                    // 파비콘 추출 실패 시 예외 무시
-                    urlInfo.setFaviconSrc("");
-                }
-            } else {
-                // 기존 Jsoup 처리
-                Document doc = Jsoup.connect(url)
-                        .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36")
-                        .timeout(5000)
-                        .get();
-                String title = doc.title();
-                if (title == null || title.isEmpty()) {
-                    throw new InvalidUrlException("웹 페이지 정보를 추출하는 중 오류 발생: " + urlInfo.getUrl());
-                }
-                urlInfo.setTitle(title);
-
-                Element faviconLink = doc.select("link[rel~=.*icon.*]").first();
-                String faviconUrl = "";
-                if (faviconLink != null) {
-                    faviconUrl = faviconLink.attr("abs:href");
-                }
-                urlInfo.setFaviconSrc(faviconUrl);
+            // Jsoup 처리
+            Document doc = Jsoup.connect(url)
+                    .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36")
+                    .timeout(5000)
+                    .get();
+            String title = doc.title();
+            if (title == null || title.isEmpty()) {
+                throw new InvalidUrlException("웹 페이지 정보를 추출하는 중 오류 발생: " + urlInfo.getUrl());
             }
+            urlInfo.setTitle(title);
+
+            Element faviconLink = doc.select("link[rel~=.*icon.*]").first();
+            String faviconUrl = "";
+            if (faviconLink != null) {
+                faviconUrl = faviconLink.attr("abs:href");
+            }
+            urlInfo.setFaviconSrc(faviconUrl);
+
         } catch (SocketTimeoutException e) {
             throw new RuntimeException(new InvalidUrlException("웹 페이지 정보를 가져오는 데 시간이 초과되었습니다: " + urlInfo.getUrl()));
         } catch (InvalidUrlException e) {
