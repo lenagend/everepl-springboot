@@ -4,6 +4,7 @@ import com.everepl.evereplspringboot.dto.UserRequest;
 import com.everepl.evereplspringboot.dto.UserResponse;
 import com.everepl.evereplspringboot.entity.User;
 import com.everepl.evereplspringboot.service.S3StorageService;
+import com.everepl.evereplspringboot.service.UserCommentMediator;
 import com.everepl.evereplspringboot.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,10 +17,12 @@ public class AuthController {
 
     private final UserService userService;
     private final S3StorageService s3StorageService;
+    private final UserCommentMediator userCommentMediator;
 
-    public AuthController(UserService userService, S3StorageService s3StorageService) {
+    public AuthController(UserService userService, S3StorageService s3StorageService, UserCommentMediator userCommentMediator) {
         this.userService = userService;
         this.s3StorageService = s3StorageService;
+        this.userCommentMediator = userCommentMediator;
     }
 
     @GetMapping("/verify-token")
@@ -52,6 +55,12 @@ public class AuthController {
 
         UserResponse userResponse = userService.updateUser(userRequest);
         return ResponseEntity.ok(userResponse);
+    }
+
+    @DeleteMapping()
+    public ResponseEntity<?> deleteUser(){
+        userCommentMediator.deleteUserAndComments();
+        return ResponseEntity.ok("정상적으로 탈퇴처리 되었습니다.");
     }
 
 }

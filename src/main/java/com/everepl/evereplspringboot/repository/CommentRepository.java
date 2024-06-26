@@ -24,4 +24,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long>, JpaSpec
     // 사용자가 작성한 댓글 조회
     Page<Comment> findByUser(User user, Pageable pageable);
 
+    List<Comment> findByUser(User user);
+
 }

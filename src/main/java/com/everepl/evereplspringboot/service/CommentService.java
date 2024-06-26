@@ -5,13 +5,13 @@ import com.everepl.evereplspringboot.entity.Comment;
 import com.everepl.evereplspringboot.entity.Target;
 import com.everepl.evereplspringboot.entity.User;
 import com.everepl.evereplspringboot.repository.CommentRepository;
-import com.everepl.evereplspringboot.utils.StringUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.parser.Tag;
 import org.jsoup.select.Elements;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -35,7 +35,7 @@ public class CommentService {
     private ObjectMapper objectMapper;
     private final NotificationService notificationService;
 
-    public CommentService(CommentRepository commentRepository, UrlInfoService urlInfoService, UserService userService, SimpMessagingTemplate messagingTemplate, ObjectMapper objectMapper, NotificationService notificationService) {
+    public CommentService(CommentRepository commentRepository, UrlInfoService urlInfoService, @Lazy UserService userService, SimpMessagingTemplate messagingTemplate, ObjectMapper objectMapper, NotificationService notificationService) {
         this.commentRepository = commentRepository;
         this.urlInfoService = urlInfoService;
         this.userService = userService;
@@ -233,6 +233,18 @@ public class CommentService {
                 (comment.getReportCount() * reportPenalty);
     }
 
+    public List<Comment> getCommentsByUser(User user) {
+        return commentRepository.findByUser(user);
+    }
+
+    public void deleteAllComments(List<Comment> comments){
+        User anonymousUser = userService.findOrCreateAnonymousUser();
+        for (Comment comment : comments) {
+            comment.setDeleted(true);
+            comment.setUser(anonymousUser);
+        }
+        commentRepository.saveAll(comments);
+    }
 
     public Page<CommentWithSourceResponse> getMyCommentsWithSources(Pageable pageable) {
         User currentUser = userService.getAuthenticatedUser();

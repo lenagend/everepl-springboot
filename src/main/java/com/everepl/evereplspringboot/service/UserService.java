@@ -2,15 +2,14 @@ package com.everepl.evereplspringboot.service;
 
 import com.everepl.evereplspringboot.dto.*;
 import com.everepl.evereplspringboot.entity.Comment;
-import com.everepl.evereplspringboot.entity.Report;
 import com.everepl.evereplspringboot.entity.User;
 import com.everepl.evereplspringboot.exceptions.AlreadyExistsException;
 import com.everepl.evereplspringboot.exceptions.UserActionRestrictionException;
-import com.everepl.evereplspringboot.repository.ReportRepository;
 import com.everepl.evereplspringboot.repository.UserRepository;
 import com.everepl.evereplspringboot.security.JwtUtils;
 import com.everepl.evereplspringboot.security.OAuth2Utils;
 import io.jsonwebtoken.Claims;
+import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -23,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -40,7 +40,7 @@ public class UserService {
 
     private final JwtUtils jwtUtils;
 
-    public UserService(UserRepository userRepository, JwtUtils jwtUtils) {
+    public UserService(UserRepository userRepository, JwtUtils jwtUtils ) {
         this.userRepository = userRepository;
         this.jwtUtils = jwtUtils;
     }
@@ -52,6 +52,20 @@ public class UserService {
     public User findUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new UsernameNotFoundException("사용자를 찾을 수 없습니다. ID: " + userId));
+    }
+
+    public User findUserByName(String name) {
+        return userRepository.findByName(name);
+    }
+
+    public User findOrCreateAnonymousUser() {
+        User anonymousUser = userRepository.findByName("탈퇴한사용자");
+        if (anonymousUser == null) {
+            anonymousUser = new User();
+            anonymousUser.setName("탈퇴한사용자");
+            anonymousUser = userRepository.save(anonymousUser);
+        }
+        return anonymousUser;
     }
 
     public User findUserById(String userId) {
@@ -218,6 +232,7 @@ public class UserService {
     public void deleteUser(Long userId) {
         userRepository.deleteById(userId);
     }
+
 
     public void suspendProfilePicture(Long userId, int days) {
         User user = findUserById(userId);
