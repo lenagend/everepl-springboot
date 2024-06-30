@@ -15,24 +15,16 @@ import jakarta.transaction.Transactional;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.*;
-import java.security.cert.X509Certificate;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -41,9 +33,6 @@ import java.util.Optional;
 @Service
 public class UrlInfoService {
     private static final Logger log = LoggerFactory.getLogger(UrlInfoService.class);
-
-    @Value("${selenium.domains}")
-    private String seleniumDomainsEnv;
 
     private final UrlInfoRepository urlInfoRepository;
 
@@ -59,18 +48,7 @@ public class UrlInfoService {
         urlInfoRepository.save(urlInfo);
     }
 
-    // 기존 processUrl 메서드
     public UrlInfoResponse processUrl(String url) {
-        // URL 검증 및 처리
-        return processUrl(url, null);
-    }
-
-    // 새로운 processTrendUrl 메서드
-    public UrlInfoResponse processTrendUrl(String url, String customTitle) {
-        return processUrl(url, customTitle);
-    }
-
-    public UrlInfoResponse processUrl(String url, String customTitle) {
         // URL 검증
         validateUrl(url);
 
@@ -88,11 +66,6 @@ public class UrlInfoService {
 
             // 웹 페이지 정보를 수집
             fetchWebPageInfo(urlInfo);
-
-            // customTitle이 있을 경우 제목을 설정
-            if (customTitle != null && !customTitle.isEmpty()) {
-                urlInfo.setTitle(customTitle);
-            }
 
             urlInfoRepository.save(urlInfo);
 
@@ -134,35 +107,8 @@ public class UrlInfoService {
         }
     }
 
-    private void setupTrustAllCerts() throws Exception {
-        TrustManager[] trustAllCerts = new TrustManager[]{
-                new X509TrustManager() {
-                    public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                        return new X509Certificate[0];
-                    }
-                    public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) { }
-                    public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) { }
-                }
-        };
-
-        SSLContext sc = SSLContext.getInstance("SSL");
-        sc.init(null, trustAllCerts, new java.security.SecureRandom());
-        HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-
-        HostnameVerifier allHostsValid = new HostnameVerifier() {
-            public boolean verify(String hostname, SSLSession session) {
-                return true;
-            }
-        };
-
-        HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
-    }
-
-
     public void fetchWebPageInfo(UrlInfo urlInfo) throws InvalidUrlException {
-        WebDriver driver = null;
         try {
-            setupTrustAllCerts();
 
             String url = urlInfo.getUrl();
 
@@ -182,11 +128,7 @@ public class UrlInfoService {
             }
             urlInfo.setTitle(title);
 
-            Element faviconLink = doc.select("link[rel~=.*icon.*]").first();
-            String faviconUrl = "";
-            if (faviconLink != null) {
-                faviconUrl = faviconLink.attr("abs:href");
-            }
+            String faviconUrl = "https://" + domain + "/favicon.ico";
             urlInfo.setFaviconSrc(faviconUrl);
 
         } catch (SocketTimeoutException e) {
@@ -195,10 +137,6 @@ public class UrlInfoService {
             throw new RuntimeException(e);
         } catch (Exception e) {
             throw new RuntimeException(new InvalidUrlException("웹 페이지 정보를 추출하는 중 오류 발생: " + urlInfo.getUrl()));
-        } finally {
-            if (driver != null) {
-                driver.quit(); // 셀레니움 드라이버 종료
-            }
         }
     }
 
