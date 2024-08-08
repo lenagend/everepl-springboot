@@ -45,49 +45,49 @@ URL: [https://everepl.com](https://everepl.com/)
 
 - **사용자 인증 및 권한 관리:** JWT 및 OAuth2(구글, 카카오, 네이버)를 사용한 인증 시스템.
 
-https://github.com/user-attachments/assets/64b66e2d-8ff9-48c6-81e7-d600541d92dc
+![untitle](https://github.com/user-attachments/assets/64b66e2d-8ff9-48c6-81e7-d600541d92dc)
 
-https://github.com/user-attachments/assets/20888f0f-8a20-4c97-83d4-01b3e3b7b094
+![untitle](https://github.com/user-attachments/assets/20888f0f-8a20-4c97-83d4-01b3e3b7b094)
 
 - **게시판 기능:** CRUD (Create, Read, Update, Delete) 기능을 제공하는 게시판.
 
-https://github.com/user-attachments/assets/093fbd2f-6a1a-4e30-ae3d-7ec023d784d8
+![untitle](https://github.com/user-attachments/assets/093fbd2f-6a1a-4e30-ae3d-7ec023d784d8)
 
-https://github.com/user-attachments/assets/3eca1c31-544e-46a3-bcf4-fea2f419186f
+![untitle](https://github.com/user-attachments/assets/3eca1c31-544e-46a3-bcf4-fea2f419186f)
 
 - **실시간 알림:** WebSocket을 통한 실시간 알림 기능.
 
-https://github.com/user-attachments/assets/2052e16d-4000-495f-89f1-4245d3888542
+![untitle](https://github.com/user-attachments/assets/2052e16d-4000-495f-89f1-4245d3888542)
 
-https://github.com/user-attachments/assets/02285aee-d1b1-4481-b992-faa8c9e7da37
+![untitle](https://github.com/user-attachments/assets/02285aee-d1b1-4481-b992-faa8c9e7da37)
 
 - **파일 업로드:** AWS S3를 통한 파일 업로드 및 관리.
 
-https://github.com/user-attachments/assets/65eb9bbe-bdeb-4b14-8307-30158296b767
+![untitle](https://github.com/user-attachments/assets/65eb9bbe-bdeb-4b14-8307-30158296b767)
 
-https://github.com/user-attachments/assets/9556d10c-cafe-45f1-b704-aa6f82a974ba
+![untitle](https://github.com/user-attachments/assets/9556d10c-cafe-45f1-b704-aa6f82a974ba)
 
 - **검색 및 필터:** 다양한 검색 및 필터 기능.
 
-https://github.com/user-attachments/assets/67c5b5f9-dbfe-4d0c-a758-d54da38e023f
+![untitle](https://github.com/user-attachments/assets/67c5b5f9-dbfe-4d0c-a758-d54da38e023f)
 
-https://github.com/user-attachments/assets/96dfcae6-5e84-4ed1-912f-51b5fc814eed
+![untitle](https://github.com/user-attachments/assets/96dfcae6-5e84-4ed1-912f-51b5fc814eed)
 
-https://github.com/user-attachments/assets/0c3b3f13-2aa0-4244-8e44-2de56beedcd7
+![untitle](https://github.com/user-attachments/assets/0c3b3f13-2aa0-4244-8e44-2de56beedcd7)
 
 - **모바일 대응:** 반응형 웹 디자인을 통한 다양한 디바이스 지원.
 
-https://github.com/user-attachments/assets/9f64b0f5-c1d4-4a83-a12d-e420120e05fd
+![untitle](https://github.com/user-attachments/assets/9f64b0f5-c1d4-4a83-a12d-e420120e05fd)
 
-https://github.com/user-attachments/assets/62f109d0-0cf1-4288-8c88-b297f081ff08
+![untitle](https://github.com/user-attachments/assets/62f109d0-0cf1-4288-8c88-b297f081ff08)
 
 - **HTTPS 리다이렉션:** AWS 로드 밸런서를 이용하여 HTTPS 인증서 적용 및 자동 리다이렉션.
 
-https://github.com/user-attachments/assets/3f2b7ebe-1c8a-4d24-baac-677a65335bb0
+![untitle](https://github.com/user-attachments/assets/3f2b7ebe-1c8a-4d24-baac-677a65335bb0)
 
 - **주기적인 헬스 체크:** Spring Boot Actuator와 연동하여 주기적인 헬스 체크 수행.
 
-https://github.com/user-attachments/assets/68c01084-ed24-48b9-8243-9f33e724adaf
+![untitle](https://github.com/user-attachments/assets/68c01084-ed24-48b9-8243-9f33e724adaf)
 
 ### 프로젝트 아키텍처
 
